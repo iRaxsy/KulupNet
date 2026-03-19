@@ -25,6 +25,11 @@ $kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC")->fetchAll();
         Kulüp başarıyla silindi.
     </div>
 <?php endif; ?>
+<?php if (isset($_GET['mesaj']) && $_GET['mesaj'] == 'guncellendi'): ?>
+    <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        Kulüp başarıyla güncellendi.
+    </div>
+<?php endif; ?>
 
 <div class="table-container">
     <table>
@@ -44,6 +49,8 @@ $kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC")->fetchAll();
                     <td><?php echo htmlspecialchars(mb_strimwidth($kulup['aciklama'], 0, 100, "...")); ?></td>
                     <td>
                         <div class="action-btns">
+                            <a href="kulup_etkinlikleri.php?kulup_id=<?php echo $kulup['id']; ?>" class="btn-sm" style="background: #10b981; color: white; border: none;">Etkinlikler</a>
+                            <a href="kulup_duzenle.php?id=<?php echo $kulup['id']; ?>" class="btn-sm btn-primary">Düzelt</a>
                             <a href="kulupler.php?sil=<?php echo $kulup['id']; ?>" class="btn-sm btn-danger" onclick="return confirm('Bu kulübü silmek istediğinize emin misiniz?')">Sil</a>
                         </div>
                     </td>

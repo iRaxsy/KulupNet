@@ -25,6 +25,11 @@ $etkinlikler = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT
         Etkinlik başarıyla silindi.
     </div>
 <?php endif; ?>
+<?php if (isset($_GET['mesaj']) && $_GET['mesaj'] == 'guncellendi'): ?>
+    <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        Etkinlik başarıyla güncellendi.
+    </div>
+<?php endif; ?>
 
 <div class="table-container">
     <table>
@@ -48,6 +53,7 @@ $etkinlikler = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT
                     <td><?php echo htmlspecialchars($etkinlik['konum']); ?></td>
                     <td>
                         <div class="action-btns">
+                            <a href="etkinlik_duzenle.php?id=<?php echo $etkinlik['id']; ?>" class="btn-sm btn-primary">Düzelt</a>
                             <a href="etkinlikler.php?sil=<?php echo $etkinlik['id']; ?>" class="btn-sm btn-danger" onclick="return confirm('Bu etkinliği silmek istediğinize emin misiniz?')">Sil</a>
                         </div>
                     </td>
