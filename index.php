@@ -11,7 +11,11 @@ $aktif_etkinlik = $db->query("SELECT COUNT(*) FROM etkinlikler WHERE tarih >= NO
 
 // Üye sayısı
 $uye_sayisi = 0;
-try { $uye_sayisi = $db->query("SELECT COUNT(*) FROM kullanicilar")->fetchColumn(); } catch(Exception $e) {}
+try {
+    $uye_sayisi = $db->query("SELECT COUNT(*) FROM kullanicilar")->fetchColumn();
+}
+catch (Exception $e) {
+}
 
 // Son kulüpler
 $son_kulupler = $db->query("SELECT k.*, (SELECT COUNT(*) FROM kulup_uyelikleri WHERE kulup_id = k.id) as uye_sayisi FROM kulupler k ORDER BY k.id DESC LIMIT 6")->fetchAll();
@@ -27,7 +31,7 @@ $takvim_etkinlik_sorgu->execute([$ay_baslap . ' 00:00:00', $ay_bitis . ' 23:59:5
 $takvim_etkinlikler = $takvim_etkinlik_sorgu->fetchAll();
 
 $etkinlik_gunleri = [];
-foreach($takvim_etkinlikler as $et) {
+foreach ($takvim_etkinlikler as $et) {
     $gun = (int)date('d', strtotime($et['tarih']));
     $etkinlik_gunleri[$gun][] = $et;
 }
@@ -36,9 +40,10 @@ $bugun = (int)date('d');
 $bu_ay = (int)date('m');
 $bu_yil = (int)date('Y');
 $toplam_gun = (int)date('t');
-$aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+$aylar = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 $ilk_gun_hafta = (int)date('w', strtotime($ay_baslap)); // 0 (Paz) - 6 (Cmt)
-if($ilk_gun_hafta == 0) $ilk_gun_hafta = 7; // Pazartesi = 1 yapmak için
+if ($ilk_gun_hafta == 0)
+    $ilk_gun_hafta = 7; // Pazartesi = 1 yapmak için
 
 // JavaScript için etkinlik verilerini JSON formatına çevir
 $takvim_json = json_encode($etkinlik_gunleri);
@@ -51,6 +56,8 @@ $takvim_json = json_encode($etkinlik_gunleri);
     <title>Kulüp & Etkinlik Platformu</title>
     <meta name="description" content="Kulüp ve etkinlik yönetim platformu. Kulüplere katılın, etkinliklere katılın, topluluğunuzu büyütün.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/theme.css">
+    <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
@@ -361,6 +368,12 @@ $takvim_json = json_encode($etkinlik_gunleri);
         .page-info { font-size: 0.75rem; color: #64748b; font-weight: 600; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Smooth transition for theme change */
+        body, .navbar, .card, .stat-item, .calendar-card, .compact-event-card, .site-footer,
+        .event-modal, .modal-header, .modal-event-item {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -378,9 +391,11 @@ $takvim_json = json_encode($etkinlik_gunleri);
                 <a href="toplantilar.php">Toplantılar</a>
                 <a href="duyurular.php">Duyurular</a>
                 <a href="oneri_sikayet.php">Öneri/Şikayet</a>
-            <?php endif; ?>
+            <?php
+endif; ?>
         </div>
         <div class="nav-auth">
+            <?php include 'includes/theme_toggle.php'; ?>
             <?php if ($giris_yapildi): ?>
                 <div class="user-menu">
                     <?php include 'includes/bildirim.php'; ?>
@@ -398,10 +413,12 @@ $takvim_json = json_encode($etkinlik_gunleri);
                         </svg>
                     </a>
                 </div>
-            <?php else: ?>
+            <?php
+else: ?>
                 <a href="giris.php" class="btn-ghost">Giriş Yap</a>
                 <a href="kayit.php" class="btn-primary-nav">Kayıt Ol</a>
-            <?php endif; ?>
+            <?php
+endif; ?>
         </div>
     </nav>
 
@@ -424,7 +441,8 @@ $takvim_json = json_encode($etkinlik_gunleri);
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
                         Etkinlikleri Gör
                     </a>
-                <?php else: ?>
+                <?php
+else: ?>
                     <a href="kayit.php" class="btn-hero primary">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM4 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 10.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
                         Hemen Kayıt Ol
@@ -432,7 +450,8 @@ $takvim_json = json_encode($etkinlik_gunleri);
                     <a href="giris.php" class="btn-hero secondary">
                         Giriş Yap →
                     </a>
-                <?php endif; ?>
+                <?php
+endif; ?>
             </div>
         </div>
     </section>
@@ -467,19 +486,19 @@ $takvim_json = json_encode($etkinlik_gunleri);
         </div>
         <div class="cards-grid">
             <?php
-            $renkler = [
-                ['bg' => 'rgba(99,102,241,0.15)', 'color' => '#818cf8'],
-                ['bg' => 'rgba(16,185,129,0.15)', 'color' => '#34d399'],
-                ['bg' => 'rgba(245,158,11,0.15)', 'color' => '#fbbf24'],
-                ['bg' => 'rgba(236,72,153,0.15)', 'color' => '#f472b6'],
-                ['bg' => 'rgba(59,130,246,0.15)', 'color' => '#60a5fa'],
-                ['bg' => 'rgba(6,182,212,0.15)', 'color' => '#22d3ee'],
-            ];
-            if (!empty($son_kulupler)):
-                foreach ($son_kulupler as $i => $k):
-                    $renk = $renkler[$i % count($renkler)];
-                    $harf = mb_strtoupper(mb_substr($k['ad'], 0, 1));
-            ?>
+$renkler = [
+    ['bg' => 'rgba(99,102,241,0.15)', 'color' => '#818cf8'],
+    ['bg' => 'rgba(16,185,129,0.15)', 'color' => '#34d399'],
+    ['bg' => 'rgba(245,158,11,0.15)', 'color' => '#fbbf24'],
+    ['bg' => 'rgba(236,72,153,0.15)', 'color' => '#f472b6'],
+    ['bg' => 'rgba(59,130,246,0.15)', 'color' => '#60a5fa'],
+    ['bg' => 'rgba(6,182,212,0.15)', 'color' => '#22d3ee'],
+];
+if (!empty($son_kulupler)):
+    foreach ($son_kulupler as $i => $k):
+        $renk = $renkler[$i % count($renkler)];
+        $harf = mb_strtoupper(mb_substr($k['ad'], 0, 1));
+?>
             <div class="card">
                 <div class="card-top">
                     <div class="card-avatar" style="background: <?php echo $renk['bg']; ?>; color: <?php echo $renk['color']; ?>;"><?php echo $harf; ?></div>
@@ -497,12 +516,15 @@ $takvim_json = json_encode($etkinlik_gunleri);
                     <a href="kulup_detay.php?id=<?php echo $k['id']; ?>" class="card-btn">Detay →</a>
                 </div>
             </div>
-            <?php endforeach; else: ?>
+            <?php
+    endforeach;
+else: ?>
             <div class="empty-state">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
                 <p>Henüz kulüp eklenmemiş.</p>
             </div>
-            <?php endif; ?>
+            <?php
+endif; ?>
         </div>
     </section>
 
@@ -517,7 +539,7 @@ $takvim_json = json_encode($etkinlik_gunleri);
             <!-- Takvim Paneli -->
             <div class="calendar-card">
                 <div class="calendar-header">
-                    <h3><?php echo $aylar[$bu_ay-1] . ' ' . $bu_yil; ?></h3>
+                    <h3><?php echo $aylar[$bu_ay - 1] . ' ' . $bu_yil; ?></h3>
                     <div style="display: flex; gap: 0.5rem;">
                         <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: #64748b;">
                             <span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1;"></span> Bugün
@@ -529,36 +551,45 @@ $takvim_json = json_encode($etkinlik_gunleri);
                 </div>
                 
                 <div class="calendar-grid">
-                    <?php 
-                    $gun_isimleri = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-                    foreach($gun_isimleri as $gi) echo "<div class='calendar-day-label'>$gi</div>";
-                    
-                    // İlk gün boşlukları
-                    for($i = 1; $i < $ilk_gun_hafta; $i++) echo "<div class='calendar-day empty'></div>";
-                    
-                    // Günler
-                    for($d = 1; $d <= $toplam_gun; $d++):
-                        $is_today = ($d == $bugun);
-                        $has_events = isset($etkinlik_gunleri[$d]);
-                        $class = "calendar-day";
-                        if($is_today) $class .= " today";
-                        if($has_events) $class .= " has-event";
-                        
-                        $tooltip = "";
-                        if($has_events) {
-                            $titles = array_map(function($e) { return htmlspecialchars($e['baslik']); }, $etkinlik_gunleri[$d]);
-                            $tooltip = 'title="' . implode(' | ', $titles) . '"';
-                        }
-                    ?>
+                    <?php
+$gun_isimleri = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+foreach ($gun_isimleri as $gi)
+    echo "<div class='calendar-day-label'>$gi</div>";
+
+// İlk gün boşlukları
+for ($i = 1; $i < $ilk_gun_hafta; $i++)
+    echo "<div class='calendar-day empty'></div>";
+
+// Günler
+for ($d = 1; $d <= $toplam_gun; $d++):
+    $is_today = ($d == $bugun);
+    $has_events = isset($etkinlik_gunleri[$d]);
+    $class = "calendar-day";
+    if ($is_today)
+        $class .= " today";
+    if ($has_events)
+        $class .= " has-event";
+
+    $tooltip = "";
+    if ($has_events) {
+        $titles = array_map(function ($e) {
+            return htmlspecialchars($e['baslik']); }, $etkinlik_gunleri[$d]);
+        $tooltip = 'title="' . implode(' | ', $titles) . '"';
+    }
+?>
                         <div class="<?php echo $class; ?>" <?php echo $tooltip; ?>>
                             <?php echo $d; ?>
-                            <?php if($has_events): ?>
+                            <?php if ($has_events): ?>
                                 <div class="event-dot-group">
-                                    <?php foreach($etkinlik_gunleri[$d] as $index => $et) if($index < 3) echo '<span class="event-dot"></span>'; ?>
+                                    <?php foreach ($etkinlik_gunleri[$d] as $index => $et)
+            if ($index < 3)
+                echo '<span class="event-dot"></span>'; ?>
                                 </div>
-                            <?php endif; ?>
+                            <?php
+    endif; ?>
                         </div>
-                    <?php endfor; ?>
+                    <?php
+endfor; ?>
                 </div>
             </div>
 
@@ -569,11 +600,12 @@ $takvim_json = json_encode($etkinlik_gunleri);
                     <a href="etkinlikler.php" style="font-size: 0.75rem; color: #818cf8; text-decoration: none; font-weight: 600;">Tümü →</a>
                 </div>
                 
-                <?php if (!empty($yaklasen)): foreach ($yaklasen as $e): 
-                    $ts = strtotime($e['tarih']);
-                    $gun = date('d', $ts);
-                    $ay = $aylar[(int)date('n', $ts) - 1];
-                ?>
+                <?php if (!empty($yaklasen)):
+    foreach ($yaklasen as $e):
+        $ts = strtotime($e['tarih']);
+        $gun = date('d', $ts);
+        $ay = $aylar[(int)date('n', $ts) - 1];
+?>
                 <a href="etkinlikler.php" class="compact-event-card">
                     <div class="mini-date">
                         <span class="d"><?php echo $gun; ?></span>
@@ -593,11 +625,14 @@ $takvim_json = json_encode($etkinlik_gunleri);
                         </div>
                     </div>
                 </a>
-                <?php endforeach; else: ?>
+                <?php
+    endforeach;
+else: ?>
                     <div style="padding: 2rem; text-align: center; color: #475569; background: rgba(0,0,0,0.15); border-radius: 1rem; border: 1px dashed rgba(255,255,255,0.05);">
                         <p style="font-size: 0.85rem;">Yakın zamanda etkinlik bulunmuyor.</p>
                     </div>
-                <?php endif; ?>
+                <?php
+endif; ?>
             </div>
         </div>
     </section>
@@ -613,7 +648,8 @@ $takvim_json = json_encode($etkinlik_gunleri);
                 <a href="toplantilar.php">Toplantılar</a>
                 <a href="duyurular.php">Duyurular</a>
                 <a href="oneri_sikayet.php">Öneri/Şikayet</a>
-            <?php endif; ?>
+            <?php
+endif; ?>
         </div>
         <p>&copy; 2026 KulüpNet. Tüm hakları saklıdır.</p>
     </footer>
@@ -643,6 +679,7 @@ $takvim_json = json_encode($etkinlik_gunleri);
         </div>
     </div>
 
+    <script src="content/js/theme.js"></script>
     <script>
         const eventData = <?php echo $takvim_json; ?>;
         const modalOverlay = document.getElementById('eventModalOverlay');
@@ -693,7 +730,7 @@ $takvim_json = json_encode($etkinlik_gunleri);
                 if (currentDayEvents.length === 0) return;
 
                 currentPage = 1;
-                modalTitle.innerText = `${gun} ${aylar[<?php echo $bu_ay-1; ?>]} ${<?php echo $bu_yil; ?>} Etkinlikleri`;
+                modalTitle.innerText = `${gun} ${aylar[<?php echo $bu_ay - 1; ?>]} ${<?php echo $bu_yil; ?>} Etkinlikleri`;
                 renderEvents();
                 modalOverlay.classList.add('active');
             });

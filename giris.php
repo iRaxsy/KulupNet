@@ -40,6 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giriş Yap - Kulüp & Etkinlik</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/theme.css">
+    <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -138,9 +140,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .login-footer p { font-size: 0.8rem; color: #64748b; }
         .login-footer a { color: #818cf8; text-decoration: none; font-weight: 600; transition: color 0.2s; }
         .login-footer a:hover { color: #a5b4fc; }
+
+        /* Light theme overrides for login */
+        body.light-theme { background: #f0f2f5; }
+        body.light-theme .bg-gradient { background: radial-gradient(ellipse 80% 60% at 20% 80%, rgba(99,102,241,0.06) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139,92,246,0.05) 0%, transparent 60%); }
+        body.light-theme .orb-1 { background: rgba(99,102,241,0.08); }
+        body.light-theme .orb-2 { background: rgba(139,92,246,0.06); }
+        body.light-theme .orb-3 { background: rgba(6,182,212,0.05); }
+        body.light-theme .grid-overlay { background-image: linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px); }
+        body.light-theme .login-card { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.08); box-shadow: 0 25px 60px rgba(0,0,0,0.08); }
+        body.light-theme .brand h1 { color: #0f172a; }
+        body.light-theme .brand p { color: #94a3b8; }
+        body.light-theme .form-group label { color: #64748b; }
+        body.light-theme .input-wrapper input { background: #f8fafc; border-color: rgba(0,0,0,0.1); color: #1e293b; }
+        body.light-theme .input-wrapper input:focus { background: #fff; border-color: rgba(99,102,241,0.5); }
+        body.light-theme .input-wrapper input::placeholder { color: #94a3b8; }
+        body.light-theme .login-footer { border-top-color: rgba(0,0,0,0.06); }
+        body.light-theme .login-footer p { color: #94a3b8; }
+        body.light-theme .error-msg { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.15); color: #dc2626; }
     </style>
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50;">
+        <?php include 'includes/theme_toggle.php'; ?>
+    </div>
     <div class="bg-gradient"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -225,5 +249,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         document.getElementById('kullanici_adi').focus();
     </script>
+<script src="content/js/theme.js"></script>
 </body>
 </html>

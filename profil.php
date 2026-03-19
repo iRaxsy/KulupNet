@@ -92,6 +92,8 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($kullanici['ad'] . ' ' . $kullanici['soyad']); ?> - Profil</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/theme.css">
+    <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -242,6 +244,7 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
             <?php if ($giris_yapildi): ?><a href="toplantilar.php">Toplantılar</a><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?>
         </div>
         <div class="nav-auth">
+            <?php include 'includes/theme_toggle.php'; ?>
             <?php if ($giris_yapildi): ?>
                 <div class="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
                     <?php include 'includes/bildirim.php'; ?>
@@ -449,5 +452,6 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
         });
         <?php endif; ?>
     </script>
+<script src="content/js/theme.js"></script>
 </body>
 </html>

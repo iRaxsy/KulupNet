@@ -99,6 +99,8 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Etkinlikler - KulüpNet</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/theme.css">
+    <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
@@ -182,6 +184,7 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
             <?php if ($giris_yapildi): ?><a href="toplantilar.php">Toplantılar</a><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?>
         </div>
         <div class="nav-auth">
+            <?php include 'includes/theme_toggle.php'; ?>
             <?php if ($giris_yapildi): ?>
                 <div class="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
                     <?php include 'includes/bildirim.php'; ?>
@@ -302,5 +305,6 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
             <?php endif; ?>
         </div>
     </div>
+<script src="content/js/theme.js"></script>
 </body>
 </html>

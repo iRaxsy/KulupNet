@@ -204,9 +204,7 @@ $uyeler = $stmt->fetchAll();
 </style>
 
 <div class="page-toolbar">
-    <h2 style="color: #f1f5f9; font-size: 1.25rem; margin: 0;">
-        Sistemden Yasaklanan Tüm Kullanıcılar
-    </h2>
+
     <form action="" method="GET" class="search-form">
         <div class="search-input-wrapper">
             <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -227,7 +225,8 @@ $uyeler = $stmt->fetchAll();
                 </svg>
                 Temizle
             </a>
-        <?php endif; ?>
+        <?php
+endif; ?>
     </form>
 </div>
 
@@ -240,7 +239,8 @@ $uyeler = $stmt->fetchAll();
         <span class="result-count"><?php echo $kayit_sayisi; ?></span>
         sonuç bulundu
     </div>
-<?php endif; ?>
+<?php
+endif; ?>
 
 <div class="table-container">
     <table>
@@ -269,7 +269,8 @@ $uyeler = $stmt->fetchAll();
                         </div>
                     </td>
                 </tr>
-            <?php else: ?>
+            <?php
+else: ?>
                 <?php foreach ($uyeler as $uye): ?>
                     <tr>
                         <td>#<?php echo $uye['id']; ?></td>
@@ -308,8 +309,10 @@ $uyeler = $stmt->fetchAll();
                             </div>
                         </td>
                     </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
+                <?php
+    endforeach; ?>
+            <?php
+endif; ?>
         </tbody>
     </table>
 </div>
