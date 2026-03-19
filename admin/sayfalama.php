@@ -1,6 +1,7 @@
 <?php
 $sayfa_sayisi = ceil($kayit_sayisi / $sayfa_kayit_sayisi);
 $aralik = 2;
+$aranan = $aranan ?? '';
 
 // Ekstra parametreler (sıralama vs.) - sayfa tarafından ayarlanabilir
 $ekstra = '';

@@ -9,6 +9,10 @@ $kulup_sayisi = $db->query("SELECT COUNT(*) FROM kulupler")->fetchColumn();
 $etkinlik_sayisi = $db->query("SELECT COUNT(*) FROM etkinlikler")->fetchColumn();
 $aktif_etkinlik = $db->query("SELECT COUNT(*) FROM etkinlikler WHERE tarih >= NOW()")->fetchColumn();
 $biten_etkinlik = $db->query("SELECT COUNT(*) FROM etkinlikler WHERE tarih < NOW()")->fetchColumn();
+$toplam_uye = $db->query("SELECT COUNT(*) FROM kullanicilar")->fetchColumn();
+$toplam_geribildirim = $db->query("SELECT COUNT(*) FROM oneri_sikayet")->fetchColumn();
+$oneri_sayisi = $db->query("SELECT COUNT(*) FROM oneri_sikayet WHERE tur = 'Öneri'")->fetchColumn();
+$sikayet_sayisi = $db->query("SELECT COUNT(*) FROM oneri_sikayet WHERE tur = 'Şikayet'")->fetchColumn();
 
 // Yaklaşan etkinlikler (en yakın 5)
 $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JOIN kulupler k ON e.kulup_id = k.id WHERE e.tarih >= NOW() ORDER BY e.tarih ASC LIMIT 5")->fetchAll();
@@ -56,6 +60,8 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
     .dash-card.blue::before { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
     .dash-card.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
     .dash-card.orange::before { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+    .dash-card.cyan::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+    .dash-card.pink::before { background: linear-gradient(90deg, #ec4899, #f472b6); }
 
     .dash-card .card-icon {
         width: 48px;
@@ -71,6 +77,8 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
     .dash-card.blue .card-icon { background: rgba(59, 130, 246, 0.15); }
     .dash-card.green .card-icon { background: rgba(16, 185, 129, 0.15); }
     .dash-card.orange .card-icon { background: rgba(245, 158, 11, 0.15); }
+    .dash-card.cyan .card-icon { background: rgba(6, 182, 212, 0.15); }
+    .dash-card.pink .card-icon { background: rgba(236, 72, 153, 0.15); }
 
     .dash-card .card-icon svg {
         width: 24px;
@@ -81,6 +89,8 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
     .dash-card.blue .card-icon svg { color: #60a5fa; }
     .dash-card.green .card-icon svg { color: #34d399; }
     .dash-card.orange .card-icon svg { color: #fbbf24; }
+    .dash-card.cyan .card-icon svg { color: #22d3ee; }
+    .dash-card.pink .card-icon svg { color: #f472b6; }
 
     .dash-card .card-label {
         font-size: 0.8rem;
@@ -340,6 +350,8 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
     .qa-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
     .qa-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
     .qa-orange { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .qa-cyan { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+    .qa-pink { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
 
     /* Empty state */
     .empty-state {
@@ -412,6 +424,26 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
         </div>
         <div class="card-label">Biten Etkinlik</div>
         <div class="card-value"><?php echo $biten_etkinlik; ?></div>
+    </div>
+
+    <div class="dash-card cyan">
+        <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+            </svg>
+        </div>
+        <div class="card-label">Toplam Üye</div>
+        <div class="card-value"><?php echo $toplam_uye; ?></div>
+    </div>
+
+    <div class="dash-card pink">
+        <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3h9m-9 3h3m-6.75 4.125a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-10.5a3 3 0 0 0-3-3h-10.5a3 3 0 0 0-3 3v10.5Z" />
+            </svg>
+        </div>
+        <div class="card-label">Geri Bildirim</div>
+        <div class="card-value"><?php echo $toplam_geribildirim; ?></div>
     </div>
 </div>
 
@@ -534,37 +566,37 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
 
 <!-- Quick Actions -->
 <div class="quick-actions">
-    <a href="kulup/kulup_ekle.php" class="quick-action">
-        <div class="qa-icon qa-purple">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-        </div>
-        Yeni Kulüp Ekle
-    </a>
     <a href="etkinlik/etkinlik_ekle.php" class="quick-action">
-        <div class="qa-icon qa-green">
+        <div class="qa-icon qa-cyan">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
         </div>
         Yeni Etkinlik Ekle
     </a>
-    <a href="kulup/kulupler.php" class="quick-action">
+    <a href="kulup/kulup_ekle.php" class="quick-action">
+        <div class="qa-icon qa-pink">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+        </div>
+        Yeni Kulüp Ekle
+    </a>
+    <a href="etkinlik/etkinlikler.php" class="quick-action">
         <div class="qa-icon qa-blue">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
             </svg>
         </div>
-        Kulüpleri Yönet
+        Etkinlikleri Yönet
     </a>
-    <a href="etkinlik/etkinlikler.php" class="quick-action">
-        <div class="qa-icon qa-orange">
+    <a href="kulup/kulupler.php" class="quick-action">
+        <div class="qa-icon qa-purple">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
             </svg>
         </div>
-        Etkinlikleri Yönet
+        Kulüpleri Yönet
     </a>
 </div>
 
