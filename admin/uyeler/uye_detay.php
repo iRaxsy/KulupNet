@@ -26,6 +26,15 @@ if (isset($_POST['kulup_rol_guncelle'])) {
     }
 }
 
+// Kulüp üyelik sil
+if (isset($_GET['sil_uyelik'])) {
+    $uyelik_id = (int)$_GET['sil_uyelik'];
+    $db->prepare("DELETE FROM kulup_uyelikleri WHERE id = ? AND kullanici_id = ?")
+       ->execute([$uyelik_id, $uye_id]);
+    header("Location: uye_detay.php?id=" . $uye_id . "&mesaj=silindi");
+    exit;
+}
+
 // Kulüp üyelikleri
 $stmt = $db->prepare("SELECT ku.*, k.ad as kulup_adi FROM kulup_uyelikleri ku JOIN kulupler k ON ku.kulup_id = k.id WHERE ku.kullanici_id = ? ORDER BY ku.katilma_tarihi DESC");
 $stmt->execute([$uye_id]);
@@ -132,7 +141,11 @@ $rol_renkleri = [
                         <button type="submit" name="kulup_rol_guncelle" value="1" class="btn-save">Kaydet</button>
                     </form>
                 </td>
-                <td>—</td>
+                <td>
+                    <div class="action-btns">
+                        <a href="javascript:void(0);" class="btn-sm btn-danger" onclick="confirmAction('?id=<?php echo $uye_id; ?>&sil_uyelik=<?php echo $k['id']; ?>', 'Kulüpten Çıkar', 'Bu üyeyi kulüpten çıkarmak istediğinize emin misiniz?', 'warning', 'Evet, Çıkar', 'Vazgeç')">Çıkar</a>
+                    </div>
+                </td>
             </tr>
             <?php endforeach; ?>
         </tbody>

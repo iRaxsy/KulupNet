@@ -16,11 +16,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $soyad = trim($_POST['soyad'] ?? '');
     $kullanici_adi = trim($_POST['kullanici_adi'] ?? '');
     $eposta = trim($_POST['eposta'] ?? '');
+    $cinsiyet = $_POST['cinsiyet'] ?? '';
     $sifre = $_POST['sifre'] ?? '';
     $sifre_tekrar = $_POST['sifre_tekrar'] ?? '';
 
-    if (empty($ad) || empty($soyad) || empty($kullanici_adi) || empty($eposta) || empty($sifre)) {
+    if (empty($ad) || empty($soyad) || empty($kullanici_adi) || empty($eposta) || empty($cinsiyet) || empty($sifre)) {
         $error = "Lütfen tüm alanları doldurun.";
+    } elseif (!in_array($cinsiyet, ['Erkek', 'Kadin'])) {
+        $error = "Geçerli bir cinsiyet seçin.";
     } elseif ($sifre !== $sifre_tekrar) {
         $error = "Şifreler eşleşmiyor.";
     } elseif (strlen($sifre) < 6) {
@@ -34,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->fetch()) {
             $error = "Bu kullanıcı adı veya e-posta zaten kullanılıyor.";
         } else {
-            $stmt = $db->prepare("INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$ad, $soyad, $kullanici_adi, $sifre, $eposta]);
+            $stmt = $db->prepare("INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta, cinsiyet) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$ad, $soyad, $kullanici_adi, $sifre, $eposta, $cinsiyet]);
             $success = "Kayıt başarılı! Şimdi giriş yapabilirsiniz.";
         }
     }
@@ -107,6 +110,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .brand h1 { font-size: 1.35rem; font-weight: 700; color: #f1f5f9; letter-spacing: -0.02em; }
         .brand p { font-size: 0.8rem; color: #64748b; margin-top: 0.35rem; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-select {
+            width: 100%; padding: 0.75rem 0.85rem 0.75rem 2.75rem; border-radius: 0.625rem;
+            border: 1px solid rgba(255,255,255,0.08); background: rgba(15,23,42,0.6);
+            color: #f1f5f9; font-size: 0.875rem; font-family: 'Inter', sans-serif;
+            outline: none; transition: all 0.3s ease; appearance: none; cursor: pointer;
+        }
+        .form-select option { background: #1e293b; color: #f1f5f9; }
+        .form-select:focus { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background: rgba(15,23,42,0.8); }
+        .form-select:focus ~ .input-icon { color: #818cf8; }
         .form-group { margin-bottom: 1.25rem; position: relative; }
         .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: #94a3b8; margin-bottom: 0.4rem; letter-spacing: 0.02em; }
         .input-wrapper { position: relative; }
@@ -236,6 +248,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="email" id="eposta" name="eposta" placeholder="E-posta adresiniz" required value="<?php echo htmlspecialchars($eposta ?? ''); ?>">
                         <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cinsiyet">Cinsiyet</label>
+                    <div class="input-wrapper">
+                        <select id="cinsiyet" name="cinsiyet" class="form-select" required>
+                            <option value="" disabled <?php echo empty($cinsiyet ?? '') ? 'selected' : ''; ?>>Cinsiyet seçin</option>
+                            <option value="Erkek" <?php echo (($cinsiyet ?? '') === 'Erkek') ? 'selected' : ''; ?>>Erkek</option>
+                            <option value="Kadin" <?php echo (($cinsiyet ?? '') === 'Kadin') ? 'selected' : ''; ?>>Kadın</option>
+                        </select>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                         </svg>
                     </div>
                 </div>

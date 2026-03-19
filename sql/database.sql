@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS etkinlikler (
     aciklama TEXT,
     tarih DATETIME NOT NULL,
     konum VARCHAR(200),
+    kisi_siniri INT DEFAULT NULL,
     FOREIGN KEY (kulup_id) REFERENCES kulupler(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
@@ -35,10 +36,12 @@ CREATE TABLE IF NOT EXISTS kullanicilar (
     kullanici_adi VARCHAR(50) NOT NULL UNIQUE,
     sifre VARCHAR(255) NOT NULL,
     eposta VARCHAR(100) NOT NULL UNIQUE,
+    cinsiyet ENUM('Erkek','Kadin') NOT NULL,
     rol ENUM('Admin','Yetkili','Organizatör','Üye') DEFAULT 'Üye',
     gizli_eposta TINYINT(1) DEFAULT 0,
     gizli_kulupler TINYINT(1) DEFAULT 0,
     gizli_etkinlikler TINYINT(1) DEFAULT 0,
+    gizli_cinsiyet TINYINT(1) DEFAULT 0,
     kayit_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -103,5 +106,5 @@ INSERT INTO etkinlikler (kulup_id, baslik, aciklama, tarih, konum) VALUES
 (1, 'Web Tasarım Yarışması', '24 saatlik kodlama yarışması (Hackathon).', DATE_ADD(NOW(), INTERVAL 14 DAY), 'Teknopark Binası');
 
 -- Örnek Kullanıcı
-INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta, rol) VALUES 
-('İsmet Can', 'Türkmen', 'ismet', '123456', 'ismet@example.com', 'Üye');
+INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta, cinsiyet, rol) VALUES 
+('İsmet Can', 'Türkmen', 'ismet', '123456', 'ismet@example.com', 'Erkek', 'Üye');

@@ -7,7 +7,17 @@ $giris_yapildi = isset($_SESSION['kullanici_id']);
 if ($giris_yapildi && isset($_POST['etkinlik_islem'])) {
     $etkinlik_id = (int)$_POST['etkinlik_id'];
     if ($_POST['etkinlik_islem'] === 'katil') {
-        $db->prepare("INSERT IGNORE INTO etkinlik_katilimlari (kullanici_id, etkinlik_id) VALUES (?, ?)")->execute([$_SESSION['kullanici_id'], $etkinlik_id]);
+        // Kontenjan kontrolü
+        $stmt_check = $db->prepare("SELECT kisi_siniri, (SELECT COUNT(*) FROM etkinlik_katilimlari WHERE etkinlik_id = ?) as mevcut_katilimci FROM etkinlikler WHERE id = ?");
+        $stmt_check->execute([$etkinlik_id, $etkinlik_id]);
+        $check = $stmt_check->fetch();
+        
+        if ($check['kisi_siniri'] === null || $check['mevcut_katilimci'] < $check['kisi_siniri']) {
+            $db->prepare("INSERT IGNORE INTO etkinlik_katilimlari (kullanici_id, etkinlik_id) VALUES (?, ?)")->execute([$_SESSION['kullanici_id'], $etkinlik_id]);
+        } else {
+            // Kontenjan dolu
+            header("Location: etkinlikler.php?hata=kontenjan"); exit;
+        }
     } elseif ($_POST['etkinlik_islem'] === 'ayril') {
         $db->prepare("DELETE FROM etkinlik_katilimlari WHERE kullanici_id = ? AND etkinlik_id = ?")->execute([$_SESSION['kullanici_id'], $etkinlik_id]);
     }
@@ -121,6 +131,7 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
         .status-badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.65rem; font-weight: 600; }
         .status-upcoming { background: rgba(16,185,129,0.15); color: #34d399; }
         .status-past { background: rgba(100,116,139,0.15); color: #94a3b8; }
+        .status-full { background: rgba(245,158,11,0.15); color: #fbbf24; }
         .empty-state { text-align: center; padding: 3rem; color: #475569; grid-column: 1/-1; }
         .empty-state svg { width: 48px; height: 48px; margin-bottom: 1rem; color: #334155; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -155,9 +166,21 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
         </div>
         <div class="nav-auth">
             <?php if ($giris_yapildi): ?>
-                <a href="profil.php" class="user-avatar-nav"><?php echo mb_strtoupper(mb_substr($_SESSION['kullanici_ad'], 0, 1)); ?></a>
-                <a href="ayarlar.php" class="btn-ghost">Ayarlar</a>
-                <a href="cikis.php" class="btn-ghost">Çıkış</a>
+                <div class="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <a href="profil.php" class="user-avatar-nav"><?php echo mb_strtoupper(mb_substr($_SESSION['kullanici_ad'], 0, 1)); ?></a>
+                    <a href="profil.php" style="text-decoration:none;"><span class="user-menu-name" style="font-size: 0.875rem; font-weight: 600; color: #e2e8f0;"><?php echo htmlspecialchars($_SESSION['kullanici_ad']); ?></span></a>
+                    <a href="ayarlar.php" class="btn-ghost" title="Ayarlar">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                    </a>
+                    <a href="cikis.php" class="btn-ghost" title="Çıkış">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                        </svg>
+                    </a>
+                </div>
             <?php else: ?>
                 <a href="giris.php" class="btn-ghost">Giriş</a>
                 <a href="kayit.php" class="btn-primary-nav">Kayıt Ol</a>
@@ -212,18 +235,29 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
                         </div>
                         <div class="card-meta-item">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
-                            <?php echo $e['katilimci_sayisi']; ?> katılımcı
+                            <?php 
+                                $ks = $e['kisi_siniri'] ?? null;
+                                $sinir_text = $ks ? ' / ' . $ks : '';
+                                echo $e['katilimci_sayisi'] . $sinir_text . ' katılımcı'; 
+                            ?>
                         </div>
                     </div>
-                    <?php if ($giris_yapildi && !$gecmis): ?>
+                    <?php 
+                        $dolu = ($ks !== null && $e['katilimci_sayisi'] >= $ks);
+                        if ($giris_yapildi && !$gecmis): 
+                    ?>
                         <form method="POST" style="margin:0;">
                             <input type="hidden" name="etkinlik_id" value="<?php echo $e['id']; ?>">
                             <?php if ($katildi): ?>
                                 <button type="submit" name="etkinlik_islem" value="ayril" class="btn-join leave">Ayrıl</button>
+                            <?php elseif ($dolu): ?>
+                                <span class="status-badge status-full">Kontenjan Dolu</span>
                             <?php else: ?>
                                 <button type="submit" name="etkinlik_islem" value="katil" class="btn-join join">Katıl</button>
                             <?php endif; ?>
                         </form>
+                    <?php elseif (!$giris_yapildi && !$gecmis && $dolu): ?>
+                        <span class="status-badge status-full">Kontenjan Dolu</span>
                     <?php endif; ?>
                 </div>
             </div>

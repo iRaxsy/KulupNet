@@ -4,6 +4,18 @@ $header_title = 'Üye Yönetimi';
 $active_page = 'uyeler';
 require_once '../header.php';
 
+$kulup_id = (int)($_GET['kulup_id'] ?? 0);
+$kulup_adi = '';
+
+if ($kulup_id > 0) {
+    $stmt = $db->prepare("SELECT ad FROM kulupler WHERE id = ?");
+    $stmt->execute([$kulup_id]);
+    $kulup_adi = $stmt->fetchColumn();
+    if ($kulup_adi) {
+        $header_title = $kulup_adi . ' Üye Listesi';
+    }
+}
+
 // Rol güncelle
 if (isset($_POST['rol_guncelle'])) {
     $uye_id = (int)$_POST['uye_id'];
@@ -20,11 +32,31 @@ if (isset($_POST['rol_guncelle'])) {
 // Sayfalama ayarları
 $sayfa_kayit_sayisi = 5;
 $sayfa = isset($_GET['sayfa']) ? max(1, (int)$_GET['sayfa']) : 1;
-$kayit_sayisi = $db->query("SELECT COUNT(*) FROM kullanicilar")->fetchColumn();
+
+if ($kulup_id > 0) {
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM kullanicilar k JOIN kulup_uyelikleri ku ON k.id = ku.kullanici_id WHERE ku.kulup_id = ?");
+    $count_stmt->execute([$kulup_id]);
+} else {
+    $count_stmt = $db->query("SELECT COUNT(*) FROM kullanicilar");
+}
+$kayit_sayisi = $count_stmt->fetchColumn();
 $offset = ($sayfa - 1) * $sayfa_kayit_sayisi;
 
 // Üyeleri listele
-$uyeler = $db->query("SELECT k.*, (SELECT COUNT(*) FROM kulup_uyelikleri WHERE kullanici_id = k.id) as kulup_sayisi FROM kullanicilar k ORDER BY k.id ASC LIMIT $sayfa_kayit_sayisi OFFSET $offset")->fetchAll();
+if ($kulup_id > 0) {
+    $stmt = $db->prepare("
+        SELECT k.*, (SELECT COUNT(*) FROM kulup_uyelikleri WHERE kullanici_id = k.id) as kulup_sayisi 
+        FROM kullanicilar k 
+        JOIN kulup_uyelikleri ku ON k.id = ku.kullanici_id 
+        WHERE ku.kulup_id = ? 
+        ORDER BY k.id ASC 
+        LIMIT $sayfa_kayit_sayisi OFFSET $offset
+    ");
+    $stmt->execute([$kulup_id]);
+    $uyeler = $stmt->fetchAll();
+} else {
+    $uyeler = $db->query("SELECT k.*, (SELECT COUNT(*) FROM kulup_uyelikleri WHERE kullanici_id = k.id) as kulup_sayisi FROM kullanicilar k ORDER BY k.id ASC LIMIT $sayfa_kayit_sayisi OFFSET $offset")->fetchAll();
+}
 
 $rol_renkleri = [
     'Admin' => '#f87171',
@@ -74,7 +106,20 @@ $rol_renkleri = [
         transition: color 0.2s;
     }
     .detail-link:hover { color: #a5b4fc; }
+    .filter-info { margin-bottom: 1rem; color: #94a3b8; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
+    .btn-clear-filter { color: #f87171; text-decoration: none; font-weight: 600; background: rgba(239, 68, 68, 0.1); padding: 0.25rem 0.6rem; border-radius: 0.5rem; font-size: 0.75rem; border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.2s; }
+    .btn-clear-filter:hover { background: rgba(239, 68, 68, 0.2); }
 </style>
+
+<?php if ($kulup_id > 0 && $kulup_adi): ?>
+<div class="filter-info">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;color:#818cf8;">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+    </svg>
+    <strong><?php echo htmlspecialchars($kulup_adi); ?></strong> kulübünün üyeleri gösteriliyor.
+    <a href="uyeler.php" class="btn-clear-filter">Filtreyi Temizle</a>
+</div>
+<?php endif; ?>
 
 <div class="table-container">
     <table>
@@ -85,7 +130,7 @@ $rol_renkleri = [
                 <th>Kullanıcı Adı</th>
                 <th>E-posta</th>
                 <th>Kulüp</th>
-                <th>Kayıt Tarihi</th>
+                <th>Cinsiyet</th>
                 <th>Rol</th>
                 <th>İşlem</th>
             </tr>
@@ -98,7 +143,7 @@ $rol_renkleri = [
                 <td><?php echo htmlspecialchars($u['kullanici_adi']); ?></td>
                 <td><?php echo htmlspecialchars($u['eposta']); ?></td>
                 <td><?php echo $u['kulup_sayisi']; ?> kulüp</td>
-                <td><?php echo date('d.m.Y', strtotime($u['kayit_tarihi'])); ?></td>
+                <td><?php echo ($u['cinsiyet'] === 'Kadin') ? 'Kadın' : htmlspecialchars($u['cinsiyet']); ?></td>
                 <td>
                     <form method="POST" style="display:flex;gap:0.5rem;align-items:center;">
                         <input type="hidden" name="uye_id" value="<?php echo $u['id']; ?>">
@@ -125,7 +170,7 @@ $rol_renkleri = [
 
 <?php
 $sayfa_url = 'uyeler.php';
-$ekstra_params = '';
+$ekstra_params = $kulup_id > 0 ? 'kulup_id=' . $kulup_id : '';
 require_once '../sayfalama.php';
 ?>
 
