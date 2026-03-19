@@ -125,7 +125,8 @@ CREATE TABLE IF NOT EXISTS bildirim_okumalari (
 ) ENGINE=InnoDB;
 
 -- Örnek Admin Hesabı
-INSERT INTO adminler (kullanici_adi, sifre) VALUES ('admin', '123456');
+-- şifre: 123456
+INSERT INTO adminler (kullanici_adi, sifre) VALUES ('admin', '$2y$10$1vqT968KGHcT0chu2oHVi.RydOv8lzSnKnmJBxOjUuh0p70WbkMSm');
 
 -- Örnek Kulüpler
 INSERT INTO kulupler (ad, aciklama) VALUES 
@@ -142,5 +143,6 @@ INSERT INTO etkinlikler (kulup_id, baslik, aciklama, tarih, konum) VALUES
 (1, 'Web Tasarım Yarışması', '24 saatlik kodlama yarışması (Hackathon).', DATE_ADD(NOW(), INTERVAL 14 DAY), 'Teknopark Binası');
 
 -- Örnek Kullanıcı
+-- şifre: 123456
 INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta, cinsiyet, rol) VALUES 
-('İsmet Can', 'Türkmen', 'ismet', '123456', 'ismet@example.com', 'Erkek', 'Üye');
+('İsmet Can', 'Türkmen', 'ismet', '$2y$10$1vqT968KGHcT0chu2oHVi.RydOv8lzSnKnmJBxOjUuh0p70WbkMSm', 'ismet@gmail.com', 'Erkek', 'Üye');

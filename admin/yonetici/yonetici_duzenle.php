@@ -32,8 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Bu kullanıcı adı başka bir yönetici tarafından kullanılıyor.";
         } else {
             if (!empty($sifre)) {
+                $hashed_sifre = password_hash($sifre, PASSWORD_DEFAULT);
                 $upd = $db->prepare("UPDATE adminler SET kullanici_adi = ?, sifre = ? WHERE id = ?");
-                $upd->execute([$kullanici_adi, $sifre, $id]);
+                $upd->execute([$kullanici_adi, $hashed_sifre, $id]);
             } else {
                 $upd = $db->prepare("UPDATE adminler SET kullanici_adi = ? WHERE id = ?");
                 $upd->execute([$kullanici_adi, $id]);

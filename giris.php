@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$giris_verisi, $giris_verisi]);
         $kullanici = $stmt->fetch();
 
-        if ($kullanici && $sifre === $kullanici['sifre']) {
+        if ($kullanici && password_verify($sifre, $kullanici['sifre'])) {
             $_SESSION['kullanici_id'] = $kullanici['id'];
             $_SESSION['kullanici_adi'] = $kullanici['kullanici_adi'];
             $_SESSION['kullanici_ad'] = $kullanici['ad'];

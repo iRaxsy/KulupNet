@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$kullanici_adi]);
         $admin = $stmt->fetch();
 
-        if ($admin && $sifre === $admin['sifre']) {
+        if ($admin && password_verify($sifre, $admin['sifre'])) {
             $_SESSION['admin_id'] = $admin['id'];
             $_SESSION['admin_adi'] = $admin['kullanici_adi'];
             header("Location: index.php");

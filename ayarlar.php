@@ -13,11 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
         $mevcut = $_POST['mevcut_sifre'] ?? '';
         $yeni = $_POST['yeni_sifre'] ?? '';
         $yeni_tekrar = $_POST['yeni_sifre_tekrar'] ?? '';
-        if ($mevcut !== $kullanici['sifre']) { $hata = 'Mevcut şifre yanlış.'; $tab = 'sifre'; }
+        if (!$kullanici || !password_verify($mevcut, $kullanici['sifre'])) { $hata = 'Mevcut şifre yanlış.'; $tab = 'sifre'; }
         elseif (strlen($yeni) < 6) { $hata = 'Yeni şifre en az 6 karakter olmalıdır.'; $tab = 'sifre'; }
         elseif ($yeni !== $yeni_tekrar) { $hata = 'Yeni şifreler eşleşmiyor.'; $tab = 'sifre'; }
         else {
-            $db->prepare("UPDATE kullanicilar SET sifre = ? WHERE id = ?")->execute([$yeni, $_SESSION['kullanici_id']]);
+            $hashed_yeni = password_hash($yeni, PASSWORD_DEFAULT);
+            $db->prepare("UPDATE kullanicilar SET sifre = ? WHERE id = ?")->execute([$hashed_yeni, $_SESSION['kullanici_id']]);
             $mesaj = 'Şifreniz başarıyla değiştirildi.'; $tab = 'sifre';
         }
     } elseif ($_POST['islem'] === 'eposta') {

@@ -81,8 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->fetch()) {
             $error = "Bu kullanıcı adı veya e-posta zaten kullanılıyor.";
         } else {
+            $hashed_sifre = password_hash($sifre, PASSWORD_DEFAULT);
             $stmt = $db->prepare("INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta, cinsiyet) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$ad, $soyad, $kullanici_adi, $sifre, $eposta, $cinsiyet]);
+            $stmt->execute([$ad, $soyad, $kullanici_adi, $hashed_sifre, $eposta, $cinsiyet]);
             $success = "Kayıt başarılı! Şimdi giriş yapabilirsiniz.";
         }
     }

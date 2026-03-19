@@ -16,8 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($count > 0) {
             $error = "Bu kullanıcı adı zaten kullanılıyor. Lütfen farklı bir tane seçin.";
         } else {
+            $hashed_sifre = password_hash($sifre, PASSWORD_DEFAULT);
             $stmt = $db->prepare("INSERT INTO adminler (kullanici_adi, sifre) VALUES (?, ?)");
-            $stmt->execute([$kullanici_adi, $sifre]);
+            $stmt->execute([$kullanici_adi, $hashed_sifre]);
             header("Location: yoneticiler.php?mesaj=eklendi");
             exit;
         }
