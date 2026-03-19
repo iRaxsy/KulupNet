@@ -14,7 +14,7 @@ $toplam_geribildirim = $db->query("SELECT COUNT(*) FROM oneri_sikayet")->fetchCo
 $oneri_sayisi = $db->query("SELECT COUNT(*) FROM oneri_sikayet WHERE tur = 'Öneri'")->fetchColumn();
 $sikayet_sayisi = $db->query("SELECT COUNT(*) FROM oneri_sikayet WHERE tur = 'Şikayet'")->fetchColumn();
 
-// Yaklaşan etkinlikler (en yakın 5)
+// Aktif etkinlikler (en yakın 5)
 $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JOIN kulupler k ON e.kulup_id = k.id WHERE e.tarih >= NOW() ORDER BY e.tarih ASC LIMIT 5")->fetchAll();
 
 // Son eklenen kulüpler (son 5)
@@ -449,14 +449,14 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
 
 <!-- Content Grid -->
 <div class="dashboard-content">
-    <!-- Yaklaşan Etkinlikler -->
+    <!-- Aktif Etkinlikler -->
     <div class="panel">
         <div class="panel-header">
             <h2>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;color:#818cf8;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                 </svg>
-                Yaklaşan Etkinlikler
+                Aktif Etkinlikler
                 <?php if ($aktif_etkinlik > 0): ?>
                     <span class="panel-badge"><?php echo $aktif_etkinlik; ?> aktif</span>
                 <?php endif; ?>
@@ -512,7 +512,7 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                 </svg>
-                <p>Yaklaşan etkinlik bulunmuyor.</p>
+                <p>Aktif etkinlik bulunmuyor.</p>
             </div>
         <?php endif; ?>
     </div>

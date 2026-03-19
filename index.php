@@ -375,6 +375,7 @@ $takvim_json = json_encode($etkinlik_gunleri);
             <a href="kulupler.php">Kulüpler</a>
             <a href="etkinlikler.php">Etkinlikler</a>
             <?php if ($giris_yapildi): ?>
+                <a href="toplantilar.php">Toplantılar</a>
                 <a href="duyurular.php">Duyurular</a>
                 <a href="oneri_sikayet.php">Öneri/Şikayet</a>
             <?php endif; ?>
@@ -608,6 +609,7 @@ $takvim_json = json_encode($etkinlik_gunleri);
             <a href="etkinlikler.php">Etkinlikler</a>
             <?php if ($giris_yapildi): ?>
                 <a href="profil.php">Profil</a>
+                <a href="toplantilar.php">Toplantılar</a>
                 <a href="duyurular.php">Duyurular</a>
                 <a href="oneri_sikayet.php">Öneri/Şikayet</a>
             <?php endif; ?>

@@ -89,6 +89,30 @@ CREATE TABLE IF NOT EXISTS duyurular (
     FOREIGN KEY (kulup_id) REFERENCES kulupler(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Toplantılar tablosu
+CREATE TABLE IF NOT EXISTS toplantilar (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    kulup_id INT NOT NULL,
+    konu VARCHAR(200) NOT NULL,
+    aciklama TEXT,
+    tarih DATETIME NOT NULL,
+    konum VARCHAR(200) NOT NULL,
+    hedef_rol VARCHAR(100) NOT NULL DEFAULT 'Herkes',
+    olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (kulup_id) REFERENCES kulupler(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Toplantı katılımları tablosu
+CREATE TABLE IF NOT EXISTS toplanti_katilimlari (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    kullanici_id INT NOT NULL,
+    toplanti_id INT NOT NULL,
+    katilim_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_katilim (kullanici_id, toplanti_id),
+    FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE,
+    FOREIGN KEY (toplanti_id) REFERENCES toplantilar(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- Örnek Admin Hesabı
 INSERT INTO adminler (kullanici_adi, sifre) VALUES ('admin', '123456');
 

@@ -4,7 +4,7 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../config/veritabani.php';
 
 // Base URL calculation (rough but functional for this structure)
-$is_subdir = (strpos($_SERVER['SCRIPT_NAME'], '/kulup/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/etkinlik/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/yonetici/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/uye/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/yasakli/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/oneri_sikayet/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/duyuru/') !== false);
+$is_subdir = (strpos($_SERVER['SCRIPT_NAME'], '/kulup/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/etkinlik/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/yonetici/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/uye/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/yasakli/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/oneri_sikayet/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/duyuru/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/toplanti/') !== false);
 $base_prefix = $is_subdir ? '../' : '';
 ?>
 <!DOCTYPE html>
@@ -137,6 +137,7 @@ $base_prefix = $is_subdir ? '../' : '';
         <a href="<?php echo $base_prefix; ?>uye/uyeler.php" class="nav-link <?php echo ($active_page == 'uyeler') ? 'active' : ''; ?>">Üyeler</a>
         <a href="<?php echo $base_prefix; ?>yasakli/yasaklilar.php" class="nav-link <?php echo ($active_page == 'yasaklilar') ? 'active' : ''; ?>">Yasaklı Kullanıcılar</a>
         <a href="<?php echo $base_prefix; ?>oneri_sikayet/oneri_sikayet.php" class="nav-link <?php echo ($active_page == 'oneri_sikayet') ? 'active' : ''; ?>">Öneri/Şikayet</a>
+        <a href="<?php echo $base_prefix; ?>toplanti/toplantilar.php" class="nav-link <?php echo ($active_page == 'toplantilar') ? 'active' : ''; ?>">Toplantılar</a>
         <a href="<?php echo $base_prefix; ?>duyuru/duyurular.php" class="nav-link <?php echo ($active_page == 'duyurular') ? 'active' : ''; ?>">Duyurular</a>
     </div>
     

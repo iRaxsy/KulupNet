@@ -179,7 +179,7 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
             <a href="etkinlikler.php" class="active">Etkinlikler</a>
-            <?php if ($giris_yapildi): ?><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?>
+            <?php if ($giris_yapildi): ?><a href="toplantilar.php">Toplantılar</a><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?>
         </div>
         <div class="nav-auth">
             <?php if ($giris_yapildi): ?>
@@ -243,7 +243,7 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
                             <?php if ($gecmis): ?>
                                 <span class="status-badge status-past">Bitti</span>
                             <?php else: ?>
-                                <span class="status-badge status-upcoming">Yaklaşan</span>
+                                <span class="status-badge status-upcoming">Aktif</span>
                             <?php endif; ?>
                         </div>
                     </div>

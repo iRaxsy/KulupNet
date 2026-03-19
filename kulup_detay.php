@@ -172,7 +172,7 @@ $yonetim_kadrosu = $yonetim_stmt->fetchAll();
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php" class="active">Kulüpler</a>
             <a href="etkinlikler.php">Etkinlikler</a>
-            <?php if ($giris_yapildi): ?><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?>
+            <?php if ($giris_yapildi): ?><a href="toplantilar.php">Toplantılar</a><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?>
         </div>
         <div class="nav-auth">
             <?php if ($giris_yapildi): ?>

@@ -33,7 +33,7 @@ $ters_yon = ($yon == 'ASC') ? 'DESC' : 'ASC';
 $sayfa_kayit_sayisi = 5;
 $sayfa = isset($_GET['sayfa']) ? max(1, (int)$_GET['sayfa']) : 1;
 
-// Toplam kayıt sayısı
+// Toplam kayıt sayısı (Aramaya göre)
 if (!empty($aranan)) {
     $count_stmt = $db->prepare("SELECT COUNT(*) FROM adminler WHERE kullanici_adi LIKE ?");
     $count_stmt->execute(["%$aranan%"]);
@@ -418,6 +418,18 @@ $yoneticiler = $stmt->fetchAll();
     </a>
 </div>
 
+<!-- Search Result Info -->
+<?php if ($aranan): ?>
+    <div class="search-result-info">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        "<strong><?php echo htmlspecialchars($aranan); ?></strong>" için
+        <span class="result-count"><?php echo $kayit_sayisi; ?></span>
+        sonuç bulundu
+    </div>
+<?php endif; ?>
+
 <!-- Olay Mesajları -->
 <?php if (isset($_GET['mesaj']) && $_GET['mesaj'] == 'silindi'): ?>
     <div class="alert-toast alert-danger">
@@ -538,7 +550,7 @@ $yoneticiler = $stmt->fetchAll();
 
 <?php
 $sayfa_url = 'yoneticiler.php';
-$ekstra_params = 'yon=' . urlencode($yon);
+$ekstra_params = 'yon=' . urlencode($yon) . ($aranan ? '&aranan=' . urlencode($aranan) : '');
 require_once '../sayfalama.php';
 ?>
 

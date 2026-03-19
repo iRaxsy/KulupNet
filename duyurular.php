@@ -310,6 +310,7 @@ $duyuru_formu_goster = $site_duyuru_yetkisi || !empty($yonetim_kulupler);
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
             <a href="etkinlikler.php">Etkinlikler</a>
+            <a href="toplantilar.php">Toplantılar</a>
             <a href="duyurular.php" class="active">Duyurular</a>
             <a href="oneri_sikayet.php">Öneri/Şikayet</a>
         </div>
@@ -426,6 +427,7 @@ $duyuru_formu_goster = $site_duyuru_yetkisi || !empty($yonetim_kulupler);
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
             <a href="etkinlikler.php">Etkinlikler</a>
+            <a href="toplantilar.php">Toplantılar</a>
             <a href="duyurular.php">Duyurular</a>
             <a href="profil.php">Profil</a>
             <a href="oneri_sikayet.php">Öneri/Şikayet</a>

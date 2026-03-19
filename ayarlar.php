@@ -144,6 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
             <a href="etkinlikler.php">Etkinlikler</a>
+            <a href="toplantilar.php">Toplantılar</a>
             <a href="duyurular.php">Duyurular</a>
             <a href="oneri_sikayet.php">Öneri/Şikayet</a>
         </div>

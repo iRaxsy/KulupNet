@@ -7,6 +7,10 @@ if (!isset($_GET['id'])) {
     exit;
 }
 
+$page_title = 'Kulüp Detayı - Admin Paneli';
+$header_title = 'Kulüp Detayı';
+$active_page = 'kulupler';
+
 $id = (int)$_GET['id'];
 
 // Rol güncelleme işlemi
