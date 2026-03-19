@@ -218,8 +218,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .toggle-password:hover { color: #94a3b8; }
         .toggle-password svg { width: 18px; height: 18px; }
 
+        .home-btn {
+            width: 40px; height: 40px; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05); color: #94a3b8; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s; text-decoration: none;
+        }
+        .home-btn:hover { background: rgba(99,102,241,0.1); color: #818cf8; border-color: rgba(99,102,241,0.3); transform: translateY(-2px); }
+        .home-btn svg { width: 20px; height: 20px; }
+
         /* Light theme overrides for register */
         body.light-theme { background: #f0f2f5; }
+        body.light-theme .home-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); color: #64748b; }
+        body.light-theme .home-btn:hover { background: rgba(99,102,241,0.08); color: #6366f1; border-color: rgba(99,102,241,0.2); }
         body.light-theme .bg-gradient { background: radial-gradient(ellipse 80% 60% at 20% 80%, rgba(99,102,241,0.06) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139,92,246,0.05) 0%, transparent 60%); }
         body.light-theme .orb-1 { background: rgba(99,102,241,0.08); }
         body.light-theme .orb-2 { background: rgba(139,92,246,0.06); }
@@ -242,9 +253,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <!-- Theme Toggle -->
-    <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50;">
+    <!-- Top Right Controls -->
+    <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; gap: 0.75rem;">
         <?php include 'includes/theme_toggle.php'; ?>
+        <a href="index.php" class="home-btn" title="Ana Sayfa">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+            </svg>
+        </a>
     </div>
     <div class="bg-gradient"></div>
     <div class="orb orb-1"></div>

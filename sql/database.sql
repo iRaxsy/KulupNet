@@ -142,5 +142,5 @@ INSERT INTO etkinlikler (kulup_id, baslik, aciklama, tarih, konum) VALUES
 (1, 'Web Tasarım Yarışması', '24 saatlik kodlama yarışması (Hackathon).', DATE_ADD(NOW(), INTERVAL 14 DAY), 'Teknopark Binası');
 
 -- Örnek Kullanıcı
-INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta, rol) VALUES 
-('İsmet Can', 'Türkmen', 'ismet', '123456', 'ismet@example.com', 'Üye');
+INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta, cinsiyet, rol) VALUES 
+('İsmet Can', 'Türkmen', 'ismet', '123456', 'ismet@example.com', 'Erkek', 'Üye');
