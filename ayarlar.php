@@ -149,6 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
             <a href="oneri_sikayet.php">Öneri/Şikayet</a>
         </div>
         <div class="nav-auth">
+            <?php include 'includes/bildirim.php'; ?>
             <a href="profil.php" class="user-avatar-nav"><?php echo mb_strtoupper(mb_substr($_SESSION['kullanici_ad'], 0, 1)); ?></a>
             <a href="profil.php" style="text-decoration:none;"><span class="user-menu-name" style="font-size: 0.875rem; font-weight: 600; color: #e2e8f0;"><?php echo htmlspecialchars($_SESSION['kullanici_ad']); ?></span></a>
             <a href="ayarlar.php" class="btn-ghost" title="Ayarlar">

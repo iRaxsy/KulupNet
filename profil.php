@@ -244,6 +244,7 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
         <div class="nav-auth">
             <?php if ($giris_yapildi): ?>
                 <div class="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <?php include 'includes/bildirim.php'; ?>
                     <a href="profil.php" class="user-avatar-nav"><?php echo mb_strtoupper(mb_substr($_SESSION['kullanici_ad'], 0, 1)); ?></a>
                     <a href="profil.php" style="text-decoration:none;"><span class="user-menu-name" style="font-size: 0.875rem; font-weight: 600; color: #e2e8f0;"><?php echo htmlspecialchars($_SESSION['kullanici_ad']); ?></span></a>
                     <a href="ayarlar.php" class="btn-ghost" title="Ayarlar">

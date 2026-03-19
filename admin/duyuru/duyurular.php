@@ -39,6 +39,7 @@ $kayitlar = $db->query("SELECT * FROM duyurular ORDER BY tarih DESC LIMIT $sayfa
     }
     .stats-row {
         display: flex; gap: 1rem; margin-bottom: 1.5rem;
+        animation: fadeInUp 0.5s ease forwards;
     }
     .mini-stat {
         background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.08);
@@ -87,6 +88,17 @@ $kayitlar = $db->query("SELECT * FROM duyurular ORDER BY tarih DESC LIMIT $sayfa
     .btn-delete:hover {
         background: rgba(239, 68, 68, 0.2);
         transform: translateY(-1px);
+    }
+
+    .table-container {
+        animation: fadeInUp 0.5s ease forwards;
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 

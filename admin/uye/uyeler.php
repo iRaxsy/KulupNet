@@ -87,6 +87,7 @@ $rol_renkleri = [
         flex-wrap: wrap;
         gap: 1rem;
         margin-bottom: 1.75rem;
+        animation: fadeInUp 0.5s ease forwards;
     }
 
     .search-form {
@@ -176,6 +177,7 @@ $rol_renkleri = [
         color: #94a3b8;
         font-size: 0.825rem;
         margin-bottom: 1.25rem;
+        animation: fadeInUp 0.4s ease forwards;
     }
 
     .search-result-info .result-count {
@@ -265,6 +267,17 @@ $rol_renkleri = [
         transform: translateY(-1px);
     }
     .btn-clear-filter svg { width: 14px; height: 14px; }
+
+    .table-container {
+        animation: fadeInUp 0.5s ease forwards;
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 
 <div class="page-toolbar">

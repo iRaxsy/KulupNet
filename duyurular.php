@@ -316,6 +316,7 @@ $duyuru_formu_goster = $site_duyuru_yetkisi || !empty($yonetim_kulupler);
         </div>
         <div class="nav-auth">
             <div class="user-menu">
+                <?php include 'includes/bildirim.php'; ?>
                 <a href="profil.php" class="user-avatar"><?php echo mb_strtoupper(mb_substr($_SESSION['kullanici_ad'], 0, 1)); ?></a>
                 <a href="profil.php" style="text-decoration:none;"><span class="user-menu-name"><?php echo htmlspecialchars($_SESSION['kullanici_ad']); ?></span></a>
                 <a href="ayarlar.php" class="btn-ghost" title="Ayarlar">

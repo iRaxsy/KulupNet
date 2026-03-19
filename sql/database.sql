@@ -113,6 +113,17 @@ CREATE TABLE IF NOT EXISTS toplanti_katilimlari (
     FOREIGN KEY (toplanti_id) REFERENCES toplantilar(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Bildirim okumaları tablosu
+CREATE TABLE IF NOT EXISTS bildirim_okumalari (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    kullanici_id INT NOT NULL,
+    tur ENUM('duyuru','toplanti','etkinlik') NOT NULL,
+    ilgili_id INT NOT NULL,
+    okunma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_bildirim (kullanici_id, tur, ilgili_id),
+    FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- Örnek Admin Hesabı
 INSERT INTO adminler (kullanici_adi, sifre) VALUES ('admin', '123456');
 
