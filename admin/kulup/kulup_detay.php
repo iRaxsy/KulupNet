@@ -9,6 +9,18 @@ if (!isset($_GET['id'])) {
 
 $id = (int)$_GET['id'];
 
+// Rol güncelleme işlemi
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rol_guncelle'])) {
+    $uye_id = (int)$_POST['uyelik_id'];
+    $yeni_rol = $_POST['yeni_rol'];
+    $gecerli_roller = ['Yönetici', 'Başkan', 'Başkan Yardımcısı', 'Üye'];
+    if (in_array($yeni_rol, $gecerli_roller)) {
+        $db->prepare("UPDATE kulup_uyelikleri SET kulup_rol = ? WHERE id = ? AND kulup_id = ?")->execute([$yeni_rol, $uye_id, $id]);
+    }
+    header("Location: kulup_detay.php?id=$id&mesaj=rol_guncellendi");
+    exit;
+}
+
 // Get Club Info
 $stmt = $db->prepare("SELECT * FROM kulupler WHERE id = ?");
 $stmt->execute([$id]);
@@ -45,15 +57,27 @@ $uye_offset = ($uye_sayfa - 1) * $limit;
 $toplam_uye_sayfa = ceil($uye_sayisi / $limit);
 
 $stmt = $db->prepare("
-    SELECT k.id, k.ad, k.soyad, ku.katilma_tarihi 
+    SELECT k.id, k.ad, k.soyad, ku.id as uyelik_id, ku.kulup_rol, ku.katilma_tarihi 
     FROM kulup_uyelikleri ku 
     JOIN kullanicilar k ON ku.kullanici_id = k.id 
     WHERE ku.kulup_id = ? 
-    ORDER BY ku.katilma_tarihi DESC 
+    ORDER BY FIELD(ku.kulup_rol, 'Yönetici','Başkan','Başkan Yardımcısı','Üye'), ku.katilma_tarihi DESC 
     LIMIT $limit OFFSET $uye_offset
 ");
 $stmt->execute([$id]);
 $son_uyeler = $stmt->fetchAll();
+
+// PDF için tüm üyeleri çek
+$tum_uyeler_stmt = $db->prepare("SELECT k.ad, k.soyad, k.kullanici_adi, ku.kulup_rol, ku.katilma_tarihi FROM kulup_uyelikleri ku JOIN kullanicilar k ON ku.kullanici_id = k.id WHERE ku.kulup_id = ? ORDER BY FIELD(ku.kulup_rol, 'Yönetici','Başkan','Başkan Yardımcısı','Üye'), ku.katilma_tarihi ASC");
+$tum_uyeler_stmt->execute([$id]);
+$tum_uyeler = $tum_uyeler_stmt->fetchAll();
+
+$rol_renkleri = [
+    'Yönetici' => ['bg' => 'rgba(239,68,68,0.15)', 'color' => '#f87171'],
+    'Başkan' => ['bg' => 'rgba(245,158,11,0.15)', 'color' => '#fbbf24'],
+    'Başkan Yardımcısı' => ['bg' => 'rgba(6,182,212,0.15)', 'color' => '#22d3ee'],
+    'Üye' => ['bg' => 'rgba(16,185,129,0.15)', 'color' => '#34d399'],
+];
 
 // Get upcoming/recent events
 $etk_sayfa = isset($_GET['etk_sayfa']) ? max(1, (int)$_GET['etk_sayfa']) : 1;
@@ -447,12 +471,20 @@ require_once '../header.php';
         </svg>
         Kulüplere Dön
     </a>
-    <a href="kulup_duzenle.php?id=<?php echo $kulup['id']; ?>" class="btn-modern btn-edit">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-        </svg>
-        Kulübü Düzenle
-    </a>
+    <div style="display: flex; gap: 0.75rem;">
+        <button onclick="indirPDF()" class="btn-modern" style="background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); cursor: pointer; outline: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Üye Listesi İndir (PDF)
+        </button>
+        <a href="kulup_duzenle.php?id=<?php echo $kulup['id']; ?>" class="btn-modern btn-edit">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+            </svg>
+            Kulübü Düzenle
+        </a>
+    </div>
 </div>
 
 <div class="grid-container">
@@ -548,16 +580,23 @@ require_once '../header.php';
                 </svg>
                 Son Katılan Üyeler
             </h3>
-            <a href="../uyeler/uyeler.php?kulup_id=<?php echo $kulup['id']; ?>" class="item-action">Tümünü Gör</a>
+            <a href="../uye/uyeler.php?kulup_id=<?php echo $kulup['id']; ?>" class="item-action">Tümünü Gör</a>
         </div>
         <div class="list-body">
             <?php if (empty($son_uyeler)): ?>
                 <div class="empty-list">Henüz bu kulübe katılan üye bulunmamaktadır.</div>
             <?php else: ?>
-                <?php foreach ($son_uyeler as $uye): ?>
+                <?php foreach ($son_uyeler as $uye): 
+                $rc = $rol_renkleri[$uye['kulup_rol']] ?? $rol_renkleri['Üye'];
+            ?>
                     <div class="list-item">
                         <div class="item-info">
-                            <span class="item-title"><?php echo htmlspecialchars($uye['ad'] . ' ' . $uye['soyad']); ?></span>
+                            <span class="item-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <?php echo htmlspecialchars($uye['ad'] . ' ' . $uye['soyad']); ?>
+                                <span style="font-size: 0.6rem; padding: 0.15rem 0.5rem; border-radius: 1rem; font-weight: 600; background: <?php echo $rc['bg']; ?>; color: <?php echo $rc['color']; ?>;">
+                                    <?php echo $uye['kulup_rol']; ?>
+                                </span>
+                            </span>
                             <span class="item-meta">
                                 <span>
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -567,7 +606,18 @@ require_once '../header.php';
                                 </span>
                             </span>
                         </div>
-                        <a href="../uyeler/uye_detay.php?id=<?php echo $uye['id']; ?>" class="item-action">Detay</a>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <form method="POST" style="margin:0; display: flex; align-items: center; gap: 0.4rem;">
+                                <input type="hidden" name="uyelik_id" value="<?php echo $uye['uyelik_id']; ?>">
+                                <select name="yeni_rol" onchange="this.form.submit()" style="padding: 0.3rem 0.5rem; border-radius: 0.4rem; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 0.7rem; font-family: 'Inter', sans-serif; cursor: pointer;">
+                                    <?php foreach (['Üye','Başkan Yardımcısı','Başkan','Yönetici'] as $r): ?>
+                                        <option value="<?php echo $r; ?>" <?php echo $uye['kulup_rol'] === $r ? 'selected' : ''; ?>><?php echo $r; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input type="hidden" name="rol_guncelle" value="1">
+                            </form>
+                            <a href="../uye/uye_detay.php?id=<?php echo $uye['id']; ?>" class="item-action">Detay</a>
+                        </div>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -650,4 +700,55 @@ require_once '../header.php';
     </div>
 </div>
 
+    <!-- Gizli PDF İçeriği -->
+    <div id="pdfContainer" style="position: absolute; left: -9999px; top: 0; width: 800px; background: white; z-index: -1;">
+        <div id="pdfContent" style="padding: 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333;">
+            <div style="text-align: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 25px;">
+                <h1 style="color: #111827; margin-bottom: 5px; font-size: 24px; font-weight: bold;"><?php echo htmlspecialchars($kulup['ad']); ?></h1>
+                <h2 style="color: #4b5563; font-size: 16px; font-weight: normal; margin: 0;">Üye Listesi</h2>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #f3f4f6;">
+                        <th style="padding: 12px; border: 1px solid #d1d5db; text-align: left; font-weight: 600; color: #374151;">Ad Soyad</th>
+                        <th style="padding: 12px; border: 1px solid #d1d5db; text-align: left; font-weight: 600; color: #374151;">Kullanıcı Adı</th>
+                        <th style="padding: 12px; border: 1px solid #d1d5db; text-align: left; font-weight: 600; color: #374151;">Rol</th>
+                        <th style="padding: 12px; border: 1px solid #d1d5db; text-align: left; font-weight: 600; color: #374151;">Katılma Tarihi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($tum_uyeler)): ?>
+                    <tr><td colspan="4" style="padding: 12px; border: 1px solid #d1d5db; text-align: center;">Henüz üye yok.</td></tr>
+                    <?php else: foreach ($tum_uyeler as $u): ?>
+                    <tr>
+                        <td style="padding: 10px 12px; border: 1px solid #d1d5db;"><?php echo htmlspecialchars($u['ad'] . ' ' . $u['soyad']); ?></td>
+                        <td style="padding: 10px 12px; border: 1px solid #d1d5db;">@<?php echo htmlspecialchars($u['kullanici_adi']); ?></td>
+                        <td style="padding: 10px 12px; border: 1px solid #d1d5db;"><?php echo htmlspecialchars($u['kulup_rol']); ?></td>
+                        <td style="padding: 10px 12px; border: 1px solid #d1d5db;"><?php echo date('d.m.Y H:i', strtotime($u['katilma_tarihi'])); ?></td>
+                    </tr>
+                    <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+            <div style="margin-top: 30px; text-align: right; font-size: 12px; color: #6b7280;">
+                Oluşturulma Tarihi: <?php echo date('d.m.Y H:i'); ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- html2pdf js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        function indirPDF() {
+            const element = document.getElementById('pdfContent');
+            const opt = {
+                margin:       [15, 15, 15, 15],
+                filename:     '<?php echo preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($kulup['ad'])); ?>_uyeleri.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
 <?php require_once '../footer.php'; ?>

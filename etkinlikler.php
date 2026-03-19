@@ -7,6 +7,15 @@ $giris_yapildi = isset($_SESSION['kullanici_id']);
 if ($giris_yapildi && isset($_POST['etkinlik_islem'])) {
     $etkinlik_id = (int)$_POST['etkinlik_id'];
     if ($_POST['etkinlik_islem'] === 'katil') {
+        // Yasaklı kullanıcı kontrolü
+        $stmt_user = $db->prepare("SELECT durum FROM kullanicilar WHERE id = ?");
+        $stmt_user->execute([$_SESSION['kullanici_id']]);
+        $user_status = $stmt_user->fetchColumn();
+        
+        if ($user_status === 'Yasakli') {
+            header("Location: etkinlikler.php?hata=yasakli"); exit;
+        }
+
         // Kontenjan kontrolü
         $stmt_check = $db->prepare("SELECT kisi_siniri, (SELECT COUNT(*) FROM etkinlik_katilimlari WHERE etkinlik_id = ?) as mevcut_katilimci FROM etkinlikler WHERE id = ?");
         $stmt_check->execute([$etkinlik_id, $etkinlik_id]);
@@ -66,12 +75,19 @@ $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $etkinlikler = $stmt->fetchAll();
 
-// Kullanıcının katıldığı etkinlikler
+// Kullanıcının katıldığı etkinlikler ve durumu
 $katildigi = [];
+$kullanici_durum = 'Aktif';
 if ($giris_yapildi) {
+    // Katılımlar
     $stmt = $db->prepare("SELECT etkinlik_id FROM etkinlik_katilimlari WHERE kullanici_id = ?");
     $stmt->execute([$_SESSION['kullanici_id']]);
     $katildigi = array_column($stmt->fetchAll(), 'etkinlik_id');
+    
+    // Kullanıcı Durumu (Yasaklı mı?)
+    $stmt_durum = $db->prepare("SELECT durum FROM kullanicilar WHERE id = ?");
+    $stmt_durum->execute([$_SESSION['kullanici_id']]);
+    $kullanici_durum = $stmt_durum->fetchColumn() ?: 'Aktif';
 }
 
 $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
@@ -132,6 +148,7 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
         .status-upcoming { background: rgba(16,185,129,0.15); color: #34d399; }
         .status-past { background: rgba(100,116,139,0.15); color: #94a3b8; }
         .status-full { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .status-banned { background: rgba(239, 68, 68, 0.15); color: #f87171; }
         .empty-state { text-align: center; padding: 3rem; color: #475569; grid-column: 1/-1; }
         .empty-state svg { width: 48px; height: 48px; margin-bottom: 1rem; color: #334155; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -193,6 +210,11 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
                 <div>
                     <h1>📅 Etkinlikler</h1>
                     <p>Tüm etkinlikleri görüntüleyin ve katılın</p>
+                    <?php if (isset($_GET['hata']) && $_GET['hata'] === 'yasakli'): ?>
+                        <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 500; display: inline-block;">
+                            Hesabınız yasaklandığı için etkinliklere katılamazsınız.
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <form action="" method="GET" class="search-container">
                     <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
@@ -250,6 +272,8 @@ $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
                             <input type="hidden" name="etkinlik_id" value="<?php echo $e['id']; ?>">
                             <?php if ($katildi): ?>
                                 <button type="submit" name="etkinlik_islem" value="ayril" class="btn-join leave">Ayrıl</button>
+                            <?php elseif ($kullanici_durum === 'Yasakli'): ?>
+                                <span class="status-badge status-banned">Yasaklısınız</span>
                             <?php elseif ($dolu): ?>
                                 <span class="status-badge status-full">Kontenjan Dolu</span>
                             <?php else: ?>

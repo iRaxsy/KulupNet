@@ -10,14 +10,14 @@ if (isset($_SESSION['kullanici_id'])) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $kullanici_adi = trim($_POST['kullanici_adi'] ?? '');
+    $giris_verisi = trim($_POST['kullanici_adi'] ?? '');
     $sifre = $_POST['sifre'] ?? '';
 
-    if (empty($kullanici_adi) || empty($sifre)) {
+    if (empty($giris_verisi) || empty($sifre)) {
         $error = "Lütfen tüm alanları doldurun.";
     } else {
-        $stmt = $db->prepare("SELECT * FROM kullanicilar WHERE kullanici_adi = ?");
-        $stmt->execute([$kullanici_adi]);
+        $stmt = $db->prepare("SELECT * FROM kullanicilar WHERE kullanici_adi = ? OR eposta = ?");
+        $stmt->execute([$giris_verisi, $giris_verisi]);
         $kullanici = $stmt->fetch();
 
         if ($kullanici && $sifre === $kullanici['sifre']) {
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: index.php");
             exit;
         } else {
-            $error = "Geçersiz kullanıcı adı veya şifre.";
+            $error = "Geçersiz giriş bilgileri veya şifre.";
         }
     }
 }
@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </svg>
                 </div>
                 <h1>Giriş Yap</h1>
-                <p>Hesabınıza giriş yapın</p>
+                <p>Kullanıcı adı veya e-posta ile giriş yapın</p>
             </div>
 
             <?php if ($error): ?>
@@ -170,9 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form action="" method="POST" autocomplete="off">
                 <div class="form-group">
-                    <label for="kullanici_adi">Kullanıcı Adı</label>
+                    <label for="kullanici_adi">Kullanıcı Adı veya E-posta</label>
                     <div class="input-wrapper">
-                        <input type="text" id="kullanici_adi" name="kullanici_adi" placeholder="Kullanıcı adınızı girin" required>
+                        <input type="text" id="kullanici_adi" name="kullanici_adi" placeholder="Kullanıcı adı veya e-posta girin" required>
                         <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                         </svg>

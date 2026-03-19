@@ -17,7 +17,31 @@ try { $uye_sayisi = $db->query("SELECT COUNT(*) FROM kullanicilar")->fetchColumn
 $son_kulupler = $db->query("SELECT k.*, (SELECT COUNT(*) FROM kulup_uyelikleri WHERE kulup_id = k.id) as uye_sayisi FROM kulupler k ORDER BY k.id DESC LIMIT 6")->fetchAll();
 
 // Yaklaşan etkinlikler
-$yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JOIN kulupler k ON e.kulup_id = k.id WHERE e.tarih >= NOW() ORDER BY e.tarih ASC LIMIT 6")->fetchAll();
+$yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JOIN kulupler k ON e.kulup_id = k.id WHERE e.tarih >= NOW() ORDER BY e.tarih ASC LIMIT 5")->fetchAll();
+
+// Takvim Verileri (Mevcut Ay)
+$ay_baslap = date('Y-m-01');
+$ay_bitis = date('Y-m-t');
+$takvim_etkinlik_sorgu = $db->prepare("SELECT id, baslik, tarih, konum FROM etkinlikler WHERE tarih BETWEEN ? AND ? ORDER BY tarih ASC");
+$takvim_etkinlik_sorgu->execute([$ay_baslap . ' 00:00:00', $ay_bitis . ' 23:59:59']);
+$takvim_etkinlikler = $takvim_etkinlik_sorgu->fetchAll();
+
+$etkinlik_gunleri = [];
+foreach($takvim_etkinlikler as $et) {
+    $gun = (int)date('d', strtotime($et['tarih']));
+    $etkinlik_gunleri[$gun][] = $et;
+}
+
+$bugun = (int)date('d');
+$bu_ay = (int)date('m');
+$bu_yil = (int)date('Y');
+$toplam_gun = (int)date('t');
+$aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+$ilk_gun_hafta = (int)date('w', strtotime($ay_baslap)); // 0 (Paz) - 6 (Cmt)
+if($ilk_gun_hafta == 0) $ilk_gun_hafta = 7; // Pazartesi = 1 yapmak için
+
+// JavaScript için etkinlik verilerini JSON formatına çevir
+$takvim_json = json_encode($etkinlik_gunleri);
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -108,9 +132,9 @@ $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JO
         }
         .btn-hero.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.4); }
         .btn-hero.secondary {
-            background: rgba(255,255,255,0.05); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(135deg, #06b6d4, #0ea5e9); color: white; border: none;
         }
-        .btn-hero.secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+        .btn-hero.secondary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(6, 182, 212, 0.4); background: linear-gradient(135deg, #22d3ee, #38bdf8); }
         .btn-hero svg { width: 18px; height: 18px; }
 
         /* Stats */
@@ -196,13 +220,77 @@ $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JO
         .empty-state svg { width: 48px; height: 48px; margin-bottom: 1rem; color: #334155; }
         .empty-state p { font-size: 0.9rem; }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.25rem; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .cards-grid { grid-template-columns: 1fr; }
-            .nav-links { display: none; }
-            .navbar { padding: 0 1rem; }
+        /* Activities Hub Grid */
+        .activities-container {
+            max-width: 1100px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 380px; gap: 2rem;
+        }
+
+        /* Calendar Styles */
+        .calendar-card {
+            background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 1.25rem; padding: 2rem; backdrop-filter: blur(10px);
+        }
+        .calendar-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;
+        }
+        .calendar-header h3 { font-size: 1.25rem; font-weight: 700; color: #f1f5f9; }
+        .calendar-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.75rem;
+        }
+        .calendar-day-label {
+            text-align: center; font-size: 0.7rem; font-weight: 700; color: #64748b;
+            text-transform: uppercase; letter-spacing: 0.1em; padding-bottom: 0.5rem;
+        }
+        .calendar-day {
+            aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 0.75rem; font-size: 0.9rem; font-weight: 500; color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.03); background: rgba(0,0,0,0.1);
+            position: relative; transition: all 0.2s; cursor: default;
+        }
+        .calendar-day.empty { background: transparent; border: none; }
+        .calendar-day.has-event {
+            background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3);
+            color: #818cf8; font-weight: 700; cursor: pointer;
+        }
+        .calendar-day.today {
+            background: linear-gradient(135deg, #6366f1, #7c3aed); color: white;
+            box-shadow: 0 0 20px rgba(99,102,241,0.3); border: none;
+        }
+        .calendar-day.has-event:hover {
+            transform: scale(1.1); background: rgba(99,102,241,0.2); z-index: 2;
+        }
+        .event-dot-group {
+            position: absolute; bottom: 6px; display: flex; gap: 2px;
+        }
+        .event-dot { width: 4px; height: 4px; border-radius: 50%; background: #818cf8; }
+        .calendar-day.today .event-dot { background: white; }
+
+        /* Compact Upcoming Events List */
+        .upcoming-panel {
+            display: flex; flex-direction: column; gap: 1rem;
+        }
+        .compact-event-card {
+            background: rgba(30,41,59,0.4); border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 1rem; padding: 1rem; display: flex; gap: 1rem;
+            transition: all 0.2s; text-decoration: none; align-items: center;
+        }
+        .compact-event-card:hover { border-color: rgba(99,102,241,0.3); background: rgba(30,41,59,0.7); }
+        .mini-date {
+            width: 48px; height: 48px; border-radius: 0.75rem; flex-shrink: 0;
+            background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .mini-date .d { font-size: 1.1rem; font-weight: 700; color: #818cf8; line-height: 1; }
+        .mini-date .m { font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; }
+        .event-main-info { flex: 1; overflow: hidden; }
+        .event-main-info h4 { font-size: 0.9rem; font-weight: 600; color: #f1f5f9; margin-bottom: 0.2rem;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .event-main-meta { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #64748b; }
+        .event-main-meta span { display: flex; align-items: center; gap: 0.25rem; }
+
+        @media (max-width: 992px) {
+            .activities-container { grid-template-columns: 1fr; }
         }
 
         /* Animations */
@@ -227,6 +315,52 @@ $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JO
         @media (max-width: 768px) {
             .mobile-menu-btn { display: block; }
         }
+        /* Event Detail Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            z-index: 1000; display: none; align-items: center; justify-content: center; padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; }
+        .event-modal {
+            background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem;
+            width: 100%; max-width: 450px; overflow: hidden; transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-overlay.active .event-modal { transform: scale(1); }
+        .modal-header {
+            padding: 1.5rem; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h3 { font-size: 1.1rem; color: #818cf8; }
+        .close-modal { 
+            background: none; border: none; color: #64748b; cursor: pointer; padding: 0.5rem;
+            transition: color 0.2s;
+        }
+        .close-modal:hover { color: #f1f5f9; }
+        .modal-body { padding: 1.5rem; max-height: 400px; overflow-y: auto; }
+        .modal-event-item {
+            padding: 1rem; border-radius: 1rem; background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1rem;
+        }
+        .modal-event-item:last-child { margin-bottom: 0; }
+        .modal-event-meta { font-size: 0.8rem; color: #94a3b8; display: flex; flex-direction: column; gap: 0.3rem; }
+        
+        /* Modal Pagination */
+        .modal-footer-pagination {
+            padding: 1rem 1.5rem; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .pagination-btn {
+            background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+            color: #818cf8; padding: 0.4rem 0.8rem; border-radius: 0.5rem; font-size: 0.75rem;
+            font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.3rem;
+        }
+        .pagination-btn:hover:not(:disabled) { background: rgba(99,102,241,0.2); transform: translateY(-1px); }
+        .pagination-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .page-info { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -370,48 +504,99 @@ $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JO
         </div>
     </section>
 
-    <!-- Etkinlikler -->
-    <section class="section" style="padding-top: 0;">
+    <!-- Etkinlik Merkezi -->
+    <section class="section">
         <div class="section-header">
-            <h2>📅 Yaklaşan Etkinlikler</h2>
-            <a href="etkinlikler.php">Tümünü Gör →</a>
+            <h2>📅 Etkinlik Merkezi</h2>
+            <p style="color: #64748b; font-size: 0.875rem;">Aylık program ve yaklaşan duyurular</p>
         </div>
-        <div class="cards-grid">
-            <?php
-            $aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
-            if (!empty($yaklasen)):
-                foreach ($yaklasen as $i => $e):
+        
+        <div class="activities-container">
+            <!-- Takvim Paneli -->
+            <div class="calendar-card">
+                <div class="calendar-header">
+                    <h3><?php echo $aylar[$bu_ay-1] . ' ' . $bu_yil; ?></h3>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: #64748b;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #6366f1;"></span> Bugün
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: #64748b;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: rgba(99,102,241,0.3); border: 1px solid rgba(99,102,241,0.5);"></span> Etkinlik
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="calendar-grid">
+                    <?php 
+                    $gun_isimleri = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+                    foreach($gun_isimleri as $gi) echo "<div class='calendar-day-label'>$gi</div>";
+                    
+                    // İlk gün boşlukları
+                    for($i = 1; $i < $ilk_gun_hafta; $i++) echo "<div class='calendar-day empty'></div>";
+                    
+                    // Günler
+                    for($d = 1; $d <= $toplam_gun; $d++):
+                        $is_today = ($d == $bugun);
+                        $has_events = isset($etkinlik_gunleri[$d]);
+                        $class = "calendar-day";
+                        if($is_today) $class .= " today";
+                        if($has_events) $class .= " has-event";
+                        
+                        $tooltip = "";
+                        if($has_events) {
+                            $titles = array_map(function($e) { return htmlspecialchars($e['baslik']); }, $etkinlik_gunleri[$d]);
+                            $tooltip = 'title="' . implode(' | ', $titles) . '"';
+                        }
+                    ?>
+                        <div class="<?php echo $class; ?>" <?php echo $tooltip; ?>>
+                            <?php echo $d; ?>
+                            <?php if($has_events): ?>
+                                <div class="event-dot-group">
+                                    <?php foreach($etkinlik_gunleri[$d] as $index => $et) if($index < 3) echo '<span class="event-dot"></span>'; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endfor; ?>
+                </div>
+            </div>
+
+            <!-- Yaklaşan Etkinlikler Listesi -->
+            <div class="upcoming-panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700;">Yaklaşanlar</h3>
+                    <a href="etkinlikler.php" style="font-size: 0.75rem; color: #818cf8; text-decoration: none; font-weight: 600;">Tümü →</a>
+                </div>
+                
+                <?php if (!empty($yaklasen)): foreach ($yaklasen as $e): 
                     $ts = strtotime($e['tarih']);
                     $gun = date('d', $ts);
                     $ay = $aylar[(int)date('n', $ts) - 1];
-                    $saat = date('H:i', $ts);
-            ?>
-            <div class="card event-card">
-                <div class="card-top">
-                    <div class="card-date">
-                        <span class="day"><?php echo $gun; ?></span>
-                        <span class="month"><?php echo $ay; ?></span>
+                ?>
+                <a href="etkinlikler.php" class="compact-event-card">
+                    <div class="mini-date">
+                        <span class="d"><?php echo $gun; ?></span>
+                        <span class="m"><?php echo $ay; ?></span>
                     </div>
-                    <div>
-                        <div class="card-title"><?php echo htmlspecialchars($e['baslik']); ?></div>
-                        <div class="card-subtitle"><?php echo htmlspecialchars($e['kulup_adi'] ?? 'Genel'); ?> · <?php echo $saat; ?></div>
+                    <div class="event-main-info">
+                        <h4><?php echo htmlspecialchars($e['baslik']); ?></h4>
+                        <div class="event-main-meta">
+                            <span>
+                                <svg style="width:12px; height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <?php echo date('H:i', $ts); ?>
+                            </span>
+                            <span>
+                                <svg style="width:12px; height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <?php echo htmlspecialchars($e['konum'] ?? 'Kayıtlı Değil'); ?>
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <div class="card-desc"><?php echo htmlspecialchars($e['aciklama'] ?? 'Açıklama bulunmuyor.'); ?></div>
-                <div class="card-footer">
-                    <div class="event-location">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
-                        <?php echo htmlspecialchars($e['konum'] ?? 'Belirtilmedi'); ?>
+                </a>
+                <?php endforeach; else: ?>
+                    <div style="padding: 2rem; text-align: center; color: #475569; background: rgba(0,0,0,0.15); border-radius: 1rem; border: 1px dashed rgba(255,255,255,0.05);">
+                        <p style="font-size: 0.85rem;">Yakın zamanda etkinlik bulunmuyor.</p>
                     </div>
-                    <a href="etkinlikler.php" class="card-btn">Detay →</a>
-                </div>
+                <?php endif; ?>
             </div>
-            <?php endforeach; else: ?>
-            <div class="empty-state">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
-                <p>Yaklaşan etkinlik bulunmuyor.</p>
-            </div>
-            <?php endif; ?>
         </div>
     </section>
 
@@ -429,5 +614,108 @@ $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JO
         </div>
         <p>&copy; 2026 KulüpNet. Tüm hakları saklıdır.</p>
     </footer>
+    <!-- Event Detail Modal -->
+    <div class="modal-overlay" id="eventModalOverlay">
+        <div class="event-modal">
+            <div class="modal-header">
+                <h3 id="modalDateTitle">Etkinlikler</h3>
+                <button class="close-modal" id="closeModal">
+                    <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dinamik içerik -->
+            </div>
+            <div class="modal-footer-pagination" id="modalPagination" style="display: none;">
+                <button class="pagination-btn" id="prevPage">
+                    <svg style="width:14px; height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Geri
+                </button>
+                <div class="page-info" id="pageInfo">1 / 1</div>
+                <button class="pagination-btn" id="nextPage">
+                    İleri
+                    <svg style="width:14px; height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const eventData = <?php echo $takvim_json; ?>;
+        const modalOverlay = document.getElementById('eventModalOverlay');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalDateTitle');
+        const modalPagination = document.getElementById('modalPagination');
+        const pageInfo = document.getElementById('pageInfo');
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+        const closeBtn = document.getElementById('closeModal');
+        const aylar = <?php echo json_encode($aylar); ?>;
+
+        let currentDayEvents = [];
+        let currentPage = 1;
+        const eventsPerPage = 3;
+
+        const renderEvents = () => {
+            const start = (currentPage - 1) * eventsPerPage;
+            const end = start + eventsPerPage;
+            const paginatedEvents = currentDayEvents.slice(start, end);
+            const totalPages = Math.ceil(currentDayEvents.length / eventsPerPage);
+
+            modalBody.innerHTML = paginatedEvents.map(e => `
+                <div class="modal-event-item">
+                    <div class="modal-event-title">${e.baslik}</div>
+                    <div class="modal-event-meta">
+                        <span>🕒 Saat: ${e.tarih.split(' ')[1].substring(0,5)}</span>
+                        <span>📍 Konum: ${e.konum || 'Belirtilmedi'}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            if (currentDayEvents.length > eventsPerPage) {
+                modalPagination.style.display = 'flex';
+                pageInfo.innerText = `${currentPage} / ${totalPages}`;
+                prevBtn.disabled = (currentPage === 1);
+                nextBtn.disabled = (currentPage === totalPages);
+            } else {
+                modalPagination.style.display = 'none';
+            }
+        };
+
+        document.querySelectorAll('.calendar-day.has-event').forEach(day => {
+            day.addEventListener('click', () => {
+                const gun = parseInt(day.innerText);
+                currentDayEvents = eventData[gun] || [];
+                
+                if (currentDayEvents.length === 0) return;
+
+                currentPage = 1;
+                modalTitle.innerText = `${gun} ${aylar[<?php echo $bu_ay-1; ?>]} ${<?php echo $bu_yil; ?>} Etkinlikleri`;
+                renderEvents();
+                modalOverlay.classList.add('active');
+            });
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderEvents();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(currentDayEvents.length / eventsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderEvents();
+            }
+        });
+
+        const closeMenu = () => modalOverlay.classList.remove('active');
+        closeBtn.addEventListener('click', closeMenu);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeMenu();
+        });
+    </script>
 </body>
 </html>

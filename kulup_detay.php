@@ -72,6 +72,17 @@ $kulup_rol_renkleri = [
     'Başkan Yardımcısı' => ['bg' => 'rgba(6,182,212,0.15)', 'color' => '#22d3ee'],
     'Üye' => ['bg' => 'rgba(16,185,129,0.15)', 'color' => '#34d399'],
 ];
+
+// Kulüp yönetim kadrosunu çek
+$yonetim_stmt = $db->prepare("
+    SELECT k.ad, k.soyad, ku.kulup_rol 
+    FROM kulup_uyelikleri ku 
+    JOIN kullanicilar k ON ku.kullanici_id = k.id 
+    WHERE ku.kulup_id = ? AND ku.kulup_rol IN ('Yönetici','Başkan','Başkan Yardımcısı') 
+    ORDER BY FIELD(ku.kulup_rol, 'Yönetici','Başkan','Başkan Yardımcısı')
+");
+$yonetim_stmt->execute([$kulup_id]);
+$yonetim_kadrosu = $yonetim_stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -151,7 +162,7 @@ $kulup_rol_renkleri = [
         .page-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; border-color: rgba(255,255,255,0.15); }
         .page-btn.disabled { opacity: 0.3; pointer-events: none; cursor: not-allowed; }
         
-        @media (max-width: 768px) { .nav-links { display: none; } .club-top { flex-direction: column; text-align: center; } }
+        @media (max-width: 768px) { .nav-links { display: none; } .club-top { flex-direction: column; text-align: center; } .yonetim-grid { grid-template-columns: 1fr !important; } }
     </style>
 </head>
 <body>
@@ -213,6 +224,36 @@ $kulup_rol_renkleri = [
             <?php endif; ?>
         </div>
 
+        <div class="section-card" style="margin-bottom: 1.5rem;">
+            <div class="section-card-header">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>
+                    Kulüp Yönetimi
+                </h2>
+            </div>
+            <?php if (!empty($yonetim_kadrosu)): ?>
+            <div style="padding: 1.25rem 1.5rem;">
+                <div class="yonetim-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                    <?php foreach ($yonetim_kadrosu as $yk): 
+                        $rc = $kulup_rol_renkleri[$yk['kulup_rol']] ?? $kulup_rol_renkleri['Üye'];
+                    ?>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: rgba(15,23,42,0.4); border: 1px solid rgba(255,255,255,0.04); border-radius: 0.75rem;">
+                        <div style="width: 36px; height: 36px; border-radius: 0.5rem; background: <?php echo $rc['bg']; ?>; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: <?php echo $rc['color']; ?>; flex-shrink: 0;">
+                            <?php echo mb_strtoupper(mb_substr($yk['ad'], 0, 1)); ?>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem; color: #e2e8f0;"><?php echo htmlspecialchars($yk['ad'] . ' ' . $yk['soyad']); ?></div>
+                            <div style="font-size: 0.7rem; font-weight: 600; color: <?php echo $rc['color']; ?>;"><?php echo $yk['kulup_rol']; ?></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php else: ?>
+                <div class="empty-section"><p>Kulüp yönetimi üyesi yok.</p></div>
+            <?php endif; ?>
+        </div>
+
         <!-- Üyeler -->
         <div class="section-card">
             <div class="section-card-header">
@@ -220,8 +261,8 @@ $kulup_rol_renkleri = [
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
                     Üyeler
                 </h2>
-                <span class="count-badge"><?php echo $toplam_uye; ?></span>
-            </div>
+                    <span class="count-badge"><?php echo $toplam_uye; ?></span>
+                </div>
             <?php if (empty($uyeler)): ?>
                 <div class="empty-section"><p>Henüz üye yok.</p></div>
             <?php else: ?>

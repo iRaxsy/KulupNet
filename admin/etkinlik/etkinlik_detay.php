@@ -371,9 +371,16 @@ $bitmis = strtotime($etkinlik['tarih']) < time();
                     <div class="info-value"><?php echo $tarih_format; ?></div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">Konum</div>
-                    <div class="info-value"><?php echo htmlspecialchars($etkinlik['konum'] ?: '-'); ?></div>
+                    <div class="info-label">Kontenjan</div>
+                    <div class="info-value">
+                        <?php echo $etkinlik['kisi_siniri'] ? htmlspecialchars($etkinlik['kisi_siniri']) . ' Kişi' : '<span style="color: #64748b;">Sınırsız</span>'; ?>
+                    </div>
                 </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Konum</div>
+                <div class="info-value"><?php echo htmlspecialchars($etkinlik['konum'] ?: '-'); ?></div>
             </div>
             
             <div class="info-item">
@@ -401,8 +408,28 @@ $bitmis = strtotime($etkinlik['tarih']) < time();
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                     </svg>
                 </div>
-                <div class="stat-value"><?php echo number_format($toplam_katilimci); ?></div>
+                <div class="stat-value">
+                    <?php 
+                        echo number_format($toplam_katilimci); 
+                        if ($etkinlik['kisi_siniri']) echo ' <span style="font-size: 1rem; color: #64748b; font-weight: 500;">/ ' . $etkinlik['kisi_siniri'] . '</span>';
+                    ?>
+                </div>
                 <div class="stat-label">Toplam Katılımcı</div>
+                
+                <?php if ($etkinlik['kisi_siniri']): 
+                    $yuzde = min(100, round(($toplam_katilimci / $etkinlik['kisi_siniri']) * 100));
+                    $bar_color = $yuzde >= 100 ? '#ef4444' : ($yuzde >= 80 ? '#f59e0b' : '#818cf8');
+                ?>
+                <div style="width: 100%; margin-top: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.5rem; color: #94a3b8;">
+                        <span>Doluluk Oranı</span>
+                        <span>%<?php echo $yuzde; ?></span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                        <div style="width: <?php echo $yuzde; ?>%; height: 100%; background: <?php echo $bar_color; ?>; transition: width 0.5s ease;"></div>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
             
             <div class="stat-box">

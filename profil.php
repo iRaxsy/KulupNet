@@ -25,6 +25,17 @@ if (!$kullanici) {
     exit;
 }
 
+// Ban / Unban İşlemleri
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['kullanici_islem']) && !$kendi_profili) {
+    if (isset($_SESSION['kullanici_rol']) && in_array($_SESSION['kullanici_rol'], ['Admin', 'Yetkili'])) {
+        $yeni_durum = $_POST['kullanici_islem'] === 'yasakla' ? 'Yasakli' : 'Aktif';
+        $update_stmt = $db->prepare("UPDATE kullanicilar SET durum = ? WHERE id = ?");
+        $update_stmt->execute([$yeni_durum, $profil_id]);
+        header("Location: profil.php?id=" . $profil_id . "&mesaj=guncellendi");
+        exit;
+    }
+}
+
 // Sayfalama Ayarları
 $sayfa_kayit_sayisi = 5;
 
@@ -81,6 +92,7 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($kullanici['ad'] . ' ' . $kullanici['soyad']); ?> - Profil</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
@@ -170,6 +182,20 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
         }
         .edit-btn:hover { background: rgba(99,102,241,0.2); }
         .edit-btn svg { width: 14px; height: 14px; }
+        .ban-btn {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.25rem;
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+            color: #f87171; border-radius: 0.5rem; text-decoration: none; font-size: 0.8rem; font-weight: 600;
+            transition: all 0.2s; border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+        }
+        .ban-btn:hover { background: rgba(239,68,68,0.2); }
+        .unban-btn {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.25rem;
+            background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);
+            color: #34d399; border-radius: 0.5rem; text-decoration: none; font-size: 0.8rem; font-weight: 600;
+            transition: all 0.2s; border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+        }
+        .unban-btn:hover { background: rgba(16,185,129,0.2); }
         
         .status-badge { padding: 0.15rem 0.5rem; border-radius: 1rem; font-size: 0.65rem; font-weight: 600; margin-left: auto; flex-shrink: 0; }
         .status-active { background: rgba(16,185,129,0.15); color: #34d399; }
@@ -180,6 +206,22 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
         .page-btn { padding: 0.5rem 1rem; border-radius: 0.5rem; background: rgba(255,255,255,0.05); color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
         .page-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; border-color: rgba(255,255,255,0.15); }
         .page-btn.disabled { opacity: 0.3; pointer-events: none; cursor: not-allowed; }
+
+        /* SweetAlert2 Dark Theme Enhancements */
+        .swal2-popup {
+            background: rgba(15, 23, 42, 0.95) !important;
+            backdrop-filter: blur(16px) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 1.25rem !important;
+            color: #f1f5f9 !important;
+        }
+        .swal2-title, .swal2-html-container { color: #f1f5f9 !important; }
+        .swal2-confirm { border-radius: 0.625rem !important; font-weight: 600 !important; }
+        .swal2-cancel {
+            background: rgba(255,255,255,0.05) !important;
+            color: #94a3b8 !important;
+            border-radius: 0.625rem !important;
+        }
 
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .profile-header, .section-card { animation: fadeInUp 0.6s ease forwards; }
@@ -232,11 +274,27 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
                     <div class="username">@<?php echo htmlspecialchars($kullanici['kullanici_adi']); ?></div>
                     <div class="profile-badges">
                         <span class="badge" style="background: <?php echo $renk['bg']; ?>; color: <?php echo $renk['color']; ?>;"><?php echo htmlspecialchars($kullanici['rol']); ?></span>
+                        <?php if (isset($kullanici['durum']) && $kullanici['durum'] === 'Yasakli'): ?>
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:12px;height:12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                                Yasaklı
+                            </span>
+                        <?php endif; ?>
+                        
                         <?php if ($kendi_profili): ?>
                             <a href="ayarlar.php" class="edit-btn">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                                 Düzenle
                             </a>
+                        <?php elseif (isset($_SESSION['kullanici_rol']) && in_array($_SESSION['kullanici_rol'], ['Admin', 'Yetkili'])): ?>
+                            <form id="banForm" method="POST" style="margin: 0;">
+                                <input type="hidden" name="kullanici_islem" id="banActionInput" value="">
+                                <?php if (isset($kullanici['durum']) && $kullanici['durum'] === 'Yasakli'): ?>
+                                    <button type="button" onclick="confirmBanAction('kaldir', 'Yasağı Kaldır', 'Bu kullanıcının yasağını kaldırmak istediğinize emin misiniz?', '#10b981')" class="unban-btn">Yasağı Kaldır</button>
+                                <?php else: ?>
+                                    <button type="button" onclick="confirmBanAction('yasakla', 'Kullanıcıyı Yasakla', 'Bu kullanıcıyı yasaklamak istediğinize emin misiniz? Yasaklı kullanıcılar etkinliklere katılamaz.', '#ef4444')" class="ban-btn">Kullanıcıyı Yasakla</button>
+                                <?php endif; ?>
+                            </form>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -353,5 +411,42 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
             <?php endif; ?>
         </div>
     </div>
+    
+    <script>
+        function confirmBanAction(actionValue, title, text, confirmColor) {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: 'rgba(255,255,255,0.1)',
+                confirmButtonText: 'Evet, Onaylıyorum',
+                cancelButtonText: 'İptal',
+                background: 'rgba(15, 23, 42, 0.95)',
+                color: '#f1f5f9'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('banActionInput').value = actionValue;
+                    document.getElementById('banForm').submit();
+                }
+            });
+        }
+        
+        <?php if (isset($_GET['mesaj']) && $_GET['mesaj'] === 'guncellendi'): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                title: 'Başarılı!',
+                text: 'Kullanıcının yasak durumu güncellendi.',
+                icon: 'success',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                background: 'rgba(15, 23, 42, 0.95)',
+                color: '#f1f5f9'
+            });
+        });
+        <?php endif; ?>
+    </script>
 </body>
 </html>

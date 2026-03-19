@@ -31,6 +31,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($eposta, FILTER_VALIDATE_EMAIL)) {
         $error = "Geçerli bir e-posta adresi girin.";
     } else {
+        // Gelişmiş e-posta doğrulama
+        $eposta_parcalari = explode('@', $eposta);
+        $yerel_kisim = $eposta_parcalari[0]; // @ öncesi
+        $domain = $eposta_parcalari[1]; // @ sonrası
+        $domain_parcalari = explode('.', $domain);
+        $domain_adi = implode('.', array_slice($domain_parcalari, 0, -1)); // TLD hariç domain
+        $tld = end($domain_parcalari); // Son uzantı
+
+        if (strlen($yerel_kisim) < 3) {
+            $error = "E-posta adresinin '@' işaretinden önceki kısmı en az 3 karakter olmalıdır.";
+        } elseif (strlen($domain_adi) < 3) {
+            $error = "E-posta alan adı çok kısa. Lütfen geçerli bir e-posta adresi kullanın.";
+        } elseif (strlen($tld) < 2 || strlen($tld) > 10) {
+            $error = "E-posta uzantısı geçersiz. Lütfen geçerli bir e-posta adresi kullanın.";
+        } else {
+            // Sadece onaylı e-posta servisleri ile kayıt
+            $onayli_domainler = [
+                'gmail.com', 'googlemail.com',
+                'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+                'yahoo.com', 'yahoo.com.tr',
+                'icloud.com', 'me.com', 'mac.com',
+                'yandex.com', 'yandex.com.tr',
+                'protonmail.com', 'proton.me',
+                'aol.com',
+                'edu.tr', 'k12.tr'
+            ];
+
+            // Alt domain desteği (örn: ogr.university.edu.tr)
+            $domain_lower = strtolower($domain);
+            $izinli = false;
+            foreach ($onayli_domainler as $onayli) {
+                if ($domain_lower === $onayli || str_ends_with($domain_lower, '.' . $onayli)) {
+                    $izinli = true;
+                    break;
+                }
+            }
+
+            if (!$izinli) {
+                $error = "Yalnızca popüler e-posta servisleri (Gmail, Outlook, Yahoo, iCloud vb.) ile kayıt olabilirsiniz.";
+            }
+        }
+    }
+
+    if (empty($error)) {
         // Kullanıcı adı veya e-posta zaten var mı?
         $stmt = $db->prepare("SELECT id FROM kullanicilar WHERE kullanici_adi = ? OR eposta = ?");
         $stmt->execute([$kullanici_adi, $eposta]);

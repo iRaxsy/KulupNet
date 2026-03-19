@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS kullanicilar (
     eposta VARCHAR(100) NOT NULL UNIQUE,
     cinsiyet ENUM('Erkek','Kadin') NOT NULL,
     rol ENUM('Admin','Yetkili','Organizatör','Üye') DEFAULT 'Üye',
+    durum ENUM('Aktif', 'Yasakli') DEFAULT 'Aktif',
     gizli_eposta TINYINT(1) DEFAULT 0,
     gizli_kulupler TINYINT(1) DEFAULT 0,
     gizli_etkinlikler TINYINT(1) DEFAULT 0,
@@ -86,7 +87,7 @@ CREATE TABLE IF NOT EXISTS duyurular (
     duyuru TEXT NOT NULL,
     tarih DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (kulup_id) REFERENCES kulupler(id) ON DELETE CASCADE
-) ENGINE=InnoDB
+) ENGINE=InnoDB;
 
 -- Örnek Admin Hesabı
 INSERT INTO adminler (kullanici_adi, sifre) VALUES ('admin', '123456');

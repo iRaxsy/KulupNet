@@ -627,6 +627,12 @@ foreach ($kulupler as $k) {
                                 </svg>
                                 Detay
                             </a>
+                            <a href="kulup_istatistik.php?id=<?php echo $kulup['id']; ?>" class="action-btn" style="background: rgba(6, 182, 212, 0.1); color: #22d3ee; border-color: rgba(6, 182, 212, 0.2);">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0v1.125c0 .621.504 1.125 1.125 1.125H9.75v-1.125c0-.621.504-1.125 1.125-1.125H12v1.125c0 .621.504 1.125 1.125 1.125H15.75v-1.125c0-.621.504-1.125 1.125-1.125H18v1.125c0 .621.504 1.125 1.125 1.125H20.25V3h-1.5" />
+                                </svg>
+                                İstatistik
+                            </a>
                             <a href="kulup_etkinlikleri.php?kulup_id=<?php echo $kulup['id']; ?>" class="action-btn btn-events">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
