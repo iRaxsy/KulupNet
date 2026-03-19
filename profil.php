@@ -196,7 +196,7 @@ $renk = $rol_renkleri[$kullanici['rol']] ?? $rol_renkleri['Üye'];
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
             <a href="etkinlikler.php">Etkinlikler</a>
-            <?php if ($giris_yapildi): ?><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?>
+            <?php if ($giris_yapildi): ?><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?>
         </div>
         <div class="nav-auth">
             <?php if ($giris_yapildi): ?>

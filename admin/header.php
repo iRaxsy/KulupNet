@@ -4,7 +4,7 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../config/veritabani.php';
 
 // Base URL calculation (rough but functional for this structure)
-$is_subdir = (strpos($_SERVER['SCRIPT_NAME'], '/kulup/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/etkinlik/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/yonetici/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/uyeler/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/oneri_sikayet/') !== false);
+$is_subdir = (strpos($_SERVER['SCRIPT_NAME'], '/kulup/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/etkinlik/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/yonetici/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/uyeler/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/oneri_sikayet/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/duyuru/') !== false);
 $base_prefix = $is_subdir ? '../' : '';
 ?>
 <!DOCTYPE html>
@@ -136,6 +136,7 @@ $base_prefix = $is_subdir ? '../' : '';
         <a href="<?php echo $base_prefix; ?>yonetici/yoneticiler.php" class="nav-link <?php echo ($active_page == 'yoneticiler') ? 'active' : ''; ?>">Yöneticiler</a>
         <a href="<?php echo $base_prefix; ?>uyeler/uyeler.php" class="nav-link <?php echo ($active_page == 'uyeler') ? 'active' : ''; ?>">Üyeler</a>
         <a href="<?php echo $base_prefix; ?>oneri_sikayet/oneri_sikayet.php" class="nav-link <?php echo ($active_page == 'oneri_sikayet') ? 'active' : ''; ?>">Öneri/Şikayet</a>
+        <a href="<?php echo $base_prefix; ?>duyuru/duyurular.php" class="nav-link <?php echo ($active_page == 'duyurular') ? 'active' : ''; ?>">Duyurular</a>
     </div>
     
     <div class="main-content">

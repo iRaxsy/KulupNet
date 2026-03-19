@@ -140,6 +140,7 @@ $gecmis = $stmt->fetchAll();
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
             <a href="etkinlikler.php">Etkinlikler</a>
+            <a href="duyurular.php">Duyurular</a>
             <a href="oneri_sikayet.php" class="active">Öneri/Şikayet</a>
         </div>
         <div class="nav-auth">

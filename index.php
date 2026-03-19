@@ -241,6 +241,7 @@ $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JO
             <a href="kulupler.php">Kulüpler</a>
             <a href="etkinlikler.php">Etkinlikler</a>
             <?php if ($giris_yapildi): ?>
+                <a href="duyurular.php">Duyurular</a>
                 <a href="oneri_sikayet.php">Öneri/Şikayet</a>
             <?php endif; ?>
         </div>
@@ -422,6 +423,7 @@ $yaklasen = $db->query("SELECT e.*, k.ad as kulup_adi FROM etkinlikler e LEFT JO
             <a href="etkinlikler.php">Etkinlikler</a>
             <?php if ($giris_yapildi): ?>
                 <a href="profil.php">Profil</a>
+                <a href="duyurular.php">Duyurular</a>
                 <a href="oneri_sikayet.php">Öneri/Şikayet</a>
             <?php endif; ?>
         </div>

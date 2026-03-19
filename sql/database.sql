@@ -75,6 +75,16 @@ CREATE TABLE IF NOT EXISTS oneri_sikayet (
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Duyurular tablosu
+CREATE TABLE IF NOT EXISTS duyurular (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tur VARCHAR(100) NOT NULL,
+    kulup_id INT DEFAULT NULL,
+    duyuru TEXT NOT NULL,
+    tarih DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (kulup_id) REFERENCES kulupler(id) ON DELETE CASCADE
+) ENGINE=InnoDB
+
 -- Örnek Admin Hesabı
 INSERT INTO adminler (kullanici_adi, sifre) VALUES ('admin', '123456');
 
