@@ -71,6 +71,3 @@ KulüpNet, üniversite topluluklarının ve öğrenci kulüplerinin tüm süreç
 ## 📜 Lisans
 
 Bu proje **MIT Lisansı** altında lisanslanmıştır. Daha fazla bilgi için [LICENSE](LICENSE) dosyasına bakabilirsiniz.
-
----
-⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
