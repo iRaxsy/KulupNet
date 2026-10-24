@@ -1,4 +1,10 @@
 <!-- Bildirim Zili Bileşeni -->
+<?php
+// Bu include kullanıcı sayfalarında kullanılır; $csrf_token_bildirim sayfada zaten
+// csrf_token() çağrılmışsa oturumdan okunur (aksi halde boş kalır ve POST reddedilir).
+$csrf_token_bildirim = function_exists('csrf_token') ? csrf_token() : '';
+?>
+<script>window.KULUPNET_CSRF_TOKEN = <?php echo json_encode($csrf_token_bildirim, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT); ?>;</script>
 <div class="bildirim-wrapper" id="bildirimWrapper">
     <button class="bildirim-btn" id="bildirimBtn" title="Bildirimler" onclick="toggleBildirimler()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;">
@@ -118,7 +124,7 @@
     }
     .bildirim-content-mesaj {
         font-size: 0.75rem; color: #94a3b8; line-height: 1.4;
-        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
     .bildirim-zaman {
         font-size: 0.65rem; color: #475569; margin-top: 0.25rem;
@@ -280,6 +286,7 @@
             const formData = new FormData();
             formData.append('tur', tur);
             formData.append('ilgili_id', id);
+            formData.append('csrf_token', window.KULUPNET_CSRF_TOKEN || '');
             fetch(apiUrl('oku'), { method: 'POST', body: formData })
                 .then(() => {
                     bildirimVerileri = bildirimVerileri.filter(b => !(b.tur === tur && b.id === id));
@@ -296,6 +303,7 @@
         const idler = bildirimVerileri.map(b => ({ tur: b.tur, id: b.id }));
         const formData = new FormData();
         formData.append('idler', JSON.stringify(idler));
+        formData.append('csrf_token', window.KULUPNET_CSRF_TOKEN || '');
         fetch(apiUrl('tumunu_oku'), { method: 'POST', body: formData })
             .then(() => {
                 bildirimVerileri = [];

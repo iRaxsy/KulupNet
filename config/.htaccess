@@ -1,0 +1,2 @@
+# config/ dizini web üzerinden erişilemez (Apache 2.4+)
+Require all denied

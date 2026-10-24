@@ -1,6 +1,6 @@
 -- Veritabanı oluşturma
-CREATE DATABASE IF NOT EXISTS kulup_yonetimi CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci;
-USE kulup_yonetimi;
+CREATE DATABASE IF NOT EXISTS kulupnet CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci;
+USE kulupnet;
 
 -- Adminler tablosu
 CREATE TABLE IF NOT EXISTS adminler (
@@ -124,8 +124,9 @@ CREATE TABLE IF NOT EXISTS bildirim_okumalari (
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Örnek Admin Hesabı
--- şifre: 123456
+-- Örnek Admin Hesabı (YER TUTUCU)
+-- Parola: 123456 — kurulumdan HEMEN sonra giriş yapıp parolayı değiştirin.
+-- Bu hash yalnızca geliştirme kolaylığı içindir; üretim ortamında bu seed'i silmenizi öneririz.
 INSERT INTO adminler (kullanici_adi, sifre) VALUES ('admin', '$2y$10$1vqT968KGHcT0chu2oHVi.RydOv8lzSnKnmJBxOjUuh0p70WbkMSm');
 
 -- Örnek Kulüpler
@@ -142,7 +143,5 @@ INSERT INTO etkinlikler (kulup_id, baslik, aciklama, tarih, konum) VALUES
 (4, 'Valorant Turnuvası', 'Kampüs içi ödüllü Valorant turnuvası kayıtları başladı.', DATE_ADD(NOW(), INTERVAL 7 DAY), 'Online / Discord'),
 (1, 'Web Tasarım Yarışması', '24 saatlik kodlama yarışması (Hackathon).', DATE_ADD(NOW(), INTERVAL 14 DAY), 'Teknopark Binası');
 
--- Örnek Kullanıcı
--- şifre: 123456
-INSERT INTO kullanicilar (ad, soyad, kullanici_adi, sifre, eposta, cinsiyet, rol) VALUES 
-('İsmet Can', 'Türkmen', 'ismet', '$2y$10$1vqT968KGHcT0chu2oHVi.RydOv8lzSnKnmJBxOjUuh0p70WbkMSm', 'ismet@gmail.com', 'Erkek', 'Üye');
+-- (Not: Kişisel PII içeren örnek kullanıcı seed'i güvenlik nedeniyle kaldırıldı.
+--  İhtiyacınız varsa /kayit.php üzerinden yeni bir hesap oluşturun.)

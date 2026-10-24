@@ -1,8 +1,9 @@
 <?php
-session_start();
+require_once 'includes/csrf.php';
 require_once 'config/veritabani.php';
+require_once 'kullanici_auth.php';
 
-if (isset($_SESSION['kullanici_id'])) {
+if (kullanici_giris_kontrol()) {
     header("Location: index.php");
     exit;
 }
@@ -10,6 +11,7 @@ if (isset($_SESSION['kullanici_id'])) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_zorunlu();
     $giris_verisi = trim($_POST['kullanici_adi'] ?? '');
     $sifre = $_POST['sifre'] ?? '';
 
@@ -21,12 +23,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kullanici = $stmt->fetch();
 
         if ($kullanici && password_verify($sifre, $kullanici['sifre'])) {
-            $_SESSION['kullanici_id'] = $kullanici['id'];
-            $_SESSION['kullanici_adi'] = $kullanici['kullanici_adi'];
-            $_SESSION['kullanici_ad'] = $kullanici['ad'];
-            $_SESSION['kullanici_rol'] = $kullanici['rol'];
-            header("Location: index.php");
-            exit;
+            // Yasaklı kullanıcı girişi engellenir (digér sayfaların kontrolü ile tutarlı)
+            if ($kullanici['durum'] === 'Yasakli') {
+                $error = "Hesabınız askıya alınmıştır. Yönetici ile iletişime geçin.";
+            } else {
+                // Session fixation'ı önlemek için ID yenile
+                session_regenerate_id(true);
+                $_SESSION['kullanici_id'] = $kullanici['id'];
+                $_SESSION['kullanici_adi'] = $kullanici['kullanici_adi'];
+                $_SESSION['kullanici_ad'] = $kullanici['ad'];
+                $_SESSION['kullanici_rol'] = $kullanici['rol'];
+                $_SESSION['kullanici_durum'] = $kullanici['durum'];
+                header("Location: index.php");
+                exit;
+            }
         } else {
             $error = "Geçersiz giriş bilgileri veya şifre.";
         }
@@ -40,15 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giriş Yap - Kulüp & Etkinlik</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/tokens.css">
+    <link rel="stylesheet" href="content/css/ui.css">
     <link rel="stylesheet" href="content/css/theme.css">
     <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif; min-height: 100vh;
-            display: flex; align-items: center; justify-content: center;
-            background: #0a0e1a; overflow: hidden; position: relative;
-        }
+        body { display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         .bg-gradient {
             position: fixed; inset: 0; z-index: 0;
             background:
@@ -172,6 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+    <a href="#main" class="skip-link">İçeriğe geç</a>
     <!-- Top Right Controls -->
     <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; gap: 0.75rem;">
         <?php include 'includes/theme_toggle.php'; ?>
@@ -187,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="orb orb-3"></div>
     <div class="grid-overlay"></div>
 
-    <div class="login-wrapper">
+    <div class="login-wrapper" id="main">
         <div class="login-card">
             <div class="brand">
                 <div class="brand-icon">
@@ -208,7 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <form action="" method="POST" autocomplete="off">
+            <form action="" method="POST" autocomplete="off" data-validate>
+                            <?php echo csrf_field(); ?>
                 <div class="form-group">
                     <label for="kullanici_adi">Kullanıcı Adı veya E-posta</label>
                     <div class="input-wrapper">
@@ -265,6 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         document.getElementById('kullanici_adi').focus();
     </script>
+<script src="content/js/form-ux.js"></script>
 <script src="content/js/theme.js"></script>
 </body>
 </html>

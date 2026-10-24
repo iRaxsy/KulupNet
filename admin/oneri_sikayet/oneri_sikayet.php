@@ -4,9 +4,10 @@ $header_title = 'Öneri & Şikayet Yönetimi';
 $active_page = 'oneri_sikayet';
 require_once '../header.php';
 
-// Sil
-if (isset($_GET['sil'])) {
-    $sil_id = (int)$_GET['sil'];
+// Sil (yalnızca POST + geçerli CSRF token)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sil'])) {
+    csrf_zorunlu();
+    $sil_id = (int)$_POST['sil'];
     $db->prepare("DELETE FROM oneri_sikayet WHERE id = ?")->execute([$sil_id]);
     header("Location: oneri_sikayet.php?mesaj=silindi");
     exit;

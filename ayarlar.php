@@ -1,14 +1,15 @@
 <?php
-session_start();
+require_once 'includes/csrf.php';
 require_once 'config/veritabani.php';
 require_once 'kullanici_auth.php';
-giris_gerekli();
+giris_gerekli($db);
 
 $kullanici = kullanici_bilgi($db);
 $mesaj = ''; $hata = ''; $tab = $_GET['tab'] ?? 'sifre';
 
 // Şifre değiştir
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
+    csrf_zorunlu();
     if ($_POST['islem'] === 'sifre') {
         $mevcut = $_POST['mevcut_sifre'] ?? '';
         $yeni = $_POST['yeni_sifre'] ?? '';
@@ -19,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
         else {
             $hashed_yeni = password_hash($yeni, PASSWORD_DEFAULT);
             $db->prepare("UPDATE kullanicilar SET sifre = ? WHERE id = ?")->execute([$hashed_yeni, $_SESSION['kullanici_id']]);
+            // Şifre değişince yeni bir oturum ID'si üret (eski token devre dışı kalsın)
+            session_regenerate_id(true);
             $mesaj = 'Şifreniz başarıyla değiştirildi.'; $tab = 'sifre';
         }
     } elseif ($_POST['islem'] === 'eposta') {
@@ -53,96 +56,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hesap Ayarları</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/tokens.css">
+    <link rel="stylesheet" href="content/css/ui.css">
     <link rel="stylesheet" href="content/css/theme.css">
     <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
-        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(10,14,26,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between; }
-        .nav-brand { font-size: 1.25rem; font-weight: 800; color: #f1f5f9; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-brand .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-        .nav-links { display: flex; gap: 0.25rem; }
-        .nav-links a { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
-        .nav-links a:hover { color: #f1f5f9; background: rgba(255,255,255,0.05); }
-        .nav-auth { display: flex; gap: 0.75rem; align-items: center; }
-        .btn-ghost { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; font-size: 0.875rem; transition: all 0.2s; border-radius: 0.5rem; }
-        .btn-ghost:hover { color: #f1f5f9; }
-        .user-avatar-nav { width: 36px; height: 36px; border-radius: 0.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #818cf8; text-decoration: none; }
-        .container { max-width: 700px; margin: 0 auto; padding: 6rem 2rem 3rem; }
-        .page-header { margin-bottom: 2rem; }
-        .page-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
-        .page-header p { font-size: 0.875rem; color: #64748b; }
+        .container { max-width: 700px; margin: 0 auto; padding: calc(var(--nav-height) + var(--sp-12)) var(--sp-8) var(--sp-12); }
+        .page-header { margin-bottom: var(--sp-8); }
+        .page-header h1 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-bottom: var(--sp-1); }
+        .page-header p { font-size: var(--fs-base); color: var(--c-text-subtle); }
 
         /* Tabs */
-        .tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 0.75rem; padding: 0.25rem; }
-        .tab-btn {
-            flex: 1; padding: 0.7rem 1rem; border: none; border-radius: 0.5rem; background: transparent;
-            color: #94a3b8; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-        .tab-btn.active { background: rgba(99,102,241,0.15); color: #818cf8; }
-        .tab-btn:hover:not(.active) { color: #e2e8f0; }
+        .tabs { display: flex; gap: var(--sp-1); margin-bottom: var(--sp-6); background: rgba(30,41,59,0.5); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: var(--sp-1); }
+        .tab-btn { flex: 1; padding: var(--sp-3) var(--sp-4); border: none; border-radius: var(--r-sm); background: transparent; color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: var(--fw-semibold); cursor: pointer; transition: all var(--dur-fast); font-family: var(--font-family); }
+        .tab-btn.active { background: rgba(99,102,241,0.15); color: var(--c-primary-light); }
+        .tab-btn:hover:not(.active) { color: var(--c-text-heading); }
 
         /* Settings Card */
-        .settings-card {
-            background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1rem; padding: 2rem; animation: fadeIn 0.4s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .settings-card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .settings-card .desc { font-size: 0.8rem; color: #64748b; margin-bottom: 1.5rem; }
-        .form-group { margin-bottom: 1.25rem; }
-        .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: #94a3b8; margin-bottom: 0.4rem; }
+        .settings-card { background: rgba(30,41,59,0.5); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-8); }
+        .settings-card h2 { font-size: var(--fs-lg); font-weight: var(--fw-bold); margin-bottom: var(--sp-2); }
+        .settings-card .desc { font-size: var(--fs-sm); color: var(--c-text-subtle); margin-bottom: var(--sp-6); }
+
+        .form-group { margin-bottom: var(--sp-5); }
+        .form-group label { display: block; font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-muted); margin-bottom: 0.4rem; }
         .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="password"] {
-            width: 100%; padding: 0.75rem 1rem; border-radius: 0.625rem;
-            border: 1px solid rgba(255,255,255,0.08); background: rgba(15,23,42,0.6);
-            color: #f1f5f9; font-size: 0.875rem; font-family: 'Inter', sans-serif;
-            outline: none; transition: all 0.3s;
+            width: 100%; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md);
+            border: 1px solid var(--c-border); background: rgba(15,23,42,0.6);
+            color: var(--c-text); font-size: var(--fs-base); font-family: var(--font-family);
+            outline: none; transition: all var(--dur-normal);
         }
         .form-group input:focus { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-        .submit-btn {
-            padding: 0.75rem 2rem; border: none; border-radius: 0.625rem;
-            background: linear-gradient(135deg, #6366f1, #7c3aed); color: white;
-            font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-        }
-        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(99,102,241,0.35); }
+        .submit-btn { padding: var(--sp-3) var(--sp-8); border: none; border-radius: var(--r-md); background: linear-gradient(135deg, var(--c-primary), #7c3aed); color: white; font-size: var(--fs-base); font-weight: var(--fw-semibold); cursor: pointer; transition: all var(--dur-normal); font-family: var(--font-family); }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow); }
 
         /* Toggle Switch */
-        .toggle-group { display: flex; align-items: center; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .toggle-group { display: flex; align-items: center; justify-content: space-between; padding: var(--sp-4) 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
         .toggle-group:last-of-type { border-bottom: none; }
-        .toggle-info .toggle-label { font-size: 0.875rem; font-weight: 600; color: #e2e8f0; }
-        .toggle-info .toggle-desc { font-size: 0.75rem; color: #64748b; margin-top: 0.1rem; }
+        .toggle-info .toggle-label { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--c-text-heading); }
+        .toggle-info .toggle-desc { font-size: var(--fs-xs); color: var(--c-text-subtle); margin-top: 0.1rem; }
         .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
         .toggle input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider {
-            position: absolute; cursor: pointer; inset: 0; background: rgba(255,255,255,0.1);
-            border-radius: 12px; transition: 0.3s;
-        }
-        .toggle-slider::before {
-            content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px;
-            background: #94a3b8; border-radius: 50%; transition: 0.3s;
-        }
+        .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: rgba(255,255,255,0.1); border-radius: 12px; transition: 0.3s; }
+        .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: var(--c-text-muted); border-radius: 50%; transition: 0.3s; }
         .toggle input:checked + .toggle-slider { background: rgba(99,102,241,0.5); }
-        .toggle input:checked + .toggle-slider::before { transform: translateX(20px); background: #818cf8; }
-
-        .alert {
-            padding: 0.75rem 1rem; border-radius: 0.625rem; font-size: 0.8rem; margin-bottom: 1.5rem;
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #6ee7b7; }
-        .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #fca5a5; }
-        .alert svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .toggle input:checked + .toggle-slider::before { transform: translateX(20px); background: var(--c-primary-light); }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        @media (max-width: 768px) { .nav-links { display: none; } }
     </style>
 </head>
 <body>
-    <nav class="navbar">
+    <a href="#main" class="skip-link">İçeriğe geç</a>
+    <nav class="navbar" aria-label="Ana navigasyon">
         <a href="index.php" class="nav-brand"><span class="brand-dot"></span> KulüpNet</a>
+        <button class="mobile-menu-btn" aria-label="Menüyü aç" aria-expanded="false">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
         <div class="nav-links">
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
@@ -169,8 +138,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
             </a>
         </div>
     </nav>
+    <div class="drawer-overlay" aria-hidden="true"></div>
+    <aside class="drawer" role="dialog" aria-label="Menü">
+        <div class="drawer-header"><span style="font-weight:700;font-size:1.1rem;">Menü</span><button class="drawer-close" aria-label="Kapat"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+        <div class="drawer-links"><a href="index.php">Ana Sayfa</a><a href="kulupler.php">Kulüpler</a><a href="etkinlikler.php">Etkinlikler</a><a href="toplantilar.php">Toplantılar</a><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a></div>
+        <div class="drawer-auth"><a href="profil.php" class="btn-ghost">Profil</a><a href="cikis.php" class="btn-ghost">Çıkış</a></div>
+    </aside>
 
-    <div class="container">
+    <div class="container" id="main">
         <div class="page-header">
             <h1>⚙️ Hesap Ayarları</h1>
             <p>Şifre, e-posta ve gizlilik ayarlarınızı yönetin</p>
@@ -201,6 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
                 <h2>Şifre Değiştir</h2>
                 <p class="desc">Hesabınızın güvenliği için şifrenizi düzenli olarak değiştirin.</p>
                 <form method="POST">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="islem" value="sifre">
                     <div class="form-group">
                         <label>Mevcut Şifre</label>
@@ -225,6 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
                 <h2>E-posta Değiştir</h2>
                 <p class="desc">Mevcut e-posta: <strong><?php echo htmlspecialchars($kullanici['eposta']); ?></strong></p>
                 <form method="POST">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="islem" value="eposta">
                     <div class="form-group">
                         <label>Yeni E-posta</label>
@@ -241,6 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
                 <h2>Gizlilik Ayarları</h2>
                 <p class="desc">Profilinizde hangi bilgilerin diğer kullanıcılara gösterilmeyeceğini seçin.</p>
                 <form method="POST">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="islem" value="gizlilik">
                     <div class="toggle-group">
                         <div class="toggle-info">
@@ -297,6 +275,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['islem'])) {
             event.target.classList.add('active');
         }
     </script>
+<script src="content/js/nav.js"></script>
+<script src="content/js/form-ux.js"></script>
+<script src="content/js/toast.js"></script>
 <script src="content/js/theme.js"></script>
 </body>
 </html>

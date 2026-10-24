@@ -23,6 +23,7 @@ if (isset($_GET['id'])) {
 
 // Güncelleme işlemi
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_zorunlu();
     $ad = trim($_POST['ad'] ?? '');
     $aciklama = trim($_POST['aciklama'] ?? '');
     

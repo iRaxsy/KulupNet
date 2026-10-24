@@ -1,7 +1,8 @@
 <?php
-session_start();
+require_once 'includes/csrf.php';
 require_once 'config/veritabani.php';
-$giris_yapildi = isset($_SESSION['kullanici_id']);
+require_once 'kullanici_auth.php';
+$giris_yapildi = kullanici_giris_kontrol();
 
 $kulup_id = (int)($_GET['id'] ?? 0);
 if (!$kulup_id) { header("Location: kulupler.php"); exit; }
@@ -14,6 +15,7 @@ if (!$kulup) { header("Location: kulupler.php"); exit; }
 
 // Katıl / Ayrıl
 if ($giris_yapildi && isset($_POST['kulup_islem'])) {
+    csrf_zorunlu();
     if ($_POST['kulup_islem'] === 'katil') {
         $db->prepare("INSERT IGNORE INTO kulup_uyelikleri (kullanici_id, kulup_id) VALUES (?, ?)")->execute([$_SESSION['kullanici_id'], $kulup_id]);
     } elseif ($_POST['kulup_islem'] === 'ayril') {
@@ -91,85 +93,77 @@ $yonetim_kadrosu = $yonetim_stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($kulup['ad']); ?> - Kulüp Detay</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/tokens.css">
+    <link rel="stylesheet" href="content/css/ui.css">
     <link rel="stylesheet" href="content/css/theme.css">
     <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
-        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(10,14,26,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between; }
-        .nav-brand { font-size: 1.25rem; font-weight: 800; color: #f1f5f9; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-brand .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-        .nav-links { display: flex; gap: 0.25rem; }
-        .nav-links a { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
-        .nav-links a:hover { color: #f1f5f9; background: rgba(255,255,255,0.05); }
-        .nav-links a.active { color: #818cf8; background: rgba(99,102,241,0.1); }
-        .nav-auth { display: flex; gap: 0.75rem; align-items: center; }
-        .btn-ghost { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; font-size: 0.875rem; border-radius: 0.5rem; transition: all 0.2s; }
-        .btn-ghost:hover { color: #f1f5f9; }
-        .btn-primary-nav { background: linear-gradient(135deg, #6366f1, #7c3aed); color: white; border: none; padding: 0.5rem 1.25rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; text-decoration: none; }
-        .user-avatar-nav { width: 36px; height: 36px; border-radius: 0.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #818cf8; text-decoration: none; }
-        .container { max-width: 900px; margin: 0 auto; padding: 6rem 2rem 3rem; }
+        .container { max-width: 900px; margin: 0 auto; padding: calc(var(--nav-height) + var(--sp-12)) var(--sp-8) var(--sp-12); }
 
         /* Club Header */
         .club-header {
-            background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1.25rem; padding: 2.5rem; margin-bottom: 1.5rem; position: relative; overflow: hidden;
+            background: rgba(30,41,59,0.5); border: 1px solid var(--c-border);
+            border-radius: var(--r-xl); padding: var(--sp-10); margin-bottom: var(--sp-6);
+            position: relative; overflow: hidden;
         }
-        .club-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4); }
-        .club-top { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .club-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--c-primary), var(--c-secondary), var(--c-cyan)); }
+        .club-top { display: flex; align-items: center; gap: var(--sp-6); margin-bottom: var(--sp-6); }
         .club-avatar-lg {
-            width: 72px; height: 72px; border-radius: 1rem;
+            width: 72px; height: 72px; border-radius: var(--r-lg);
             background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3));
-            display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.75rem; color: #818cf8; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: var(--fw-extrabold); font-size: var(--fs-2xl); color: var(--c-primary-light); flex-shrink: 0;
         }
-        .club-info h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; }
-        .club-info .club-stats { font-size: 0.8rem; color: #64748b; display: flex; gap: 1rem; }
-        .club-desc { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; margin-bottom: 1.5rem; }
-        .club-actions { display: flex; gap: 0.75rem; }
+        .club-info h1 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-bottom: var(--sp-1); }
+        .club-info .club-stats { font-size: var(--fs-xs); color: var(--c-text-subtle); display: flex; gap: var(--sp-4); }
+        .club-desc { font-size: var(--fs-base); color: var(--c-text-muted); line-height: var(--lh-normal); margin-bottom: var(--sp-6); }
+        .club-actions { display: flex; gap: var(--sp-3); }
         .btn-action {
-            padding: 0.6rem 1.5rem; border-radius: 0.625rem; font-size: 0.85rem; font-weight: 600;
-            border: none; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;
+            padding: var(--sp-3) var(--sp-6); border-radius: var(--r-md); font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+            border: none; cursor: pointer; transition: all var(--dur-normal) var(--ease-out); font-family: var(--font-family);
         }
-        .btn-action.join { background: linear-gradient(135deg, #6366f1, #7c3aed); color: white; }
-        .btn-action.join:hover { box-shadow: 0 8px 25px rgba(99,102,241,0.4); transform: translateY(-1px); }
+        .btn-action.join { background: linear-gradient(135deg, var(--c-primary), #7c3aed); color: white; }
+        .btn-action.join:hover { box-shadow: var(--shadow-glow-lg); transform: translateY(-1px); }
         .btn-action.leave { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
         .btn-action.leave:hover { background: rgba(239,68,68,0.2); }
-        .btn-back { color: #818cf8; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem; margin-bottom: 1.5rem; transition: color 0.2s; }
+        .btn-back { color: var(--c-primary-light); text-decoration: none; font-size: var(--fs-sm); font-weight: var(--fw-semibold); display: inline-flex; align-items: center; gap: var(--sp-1); margin-bottom: var(--sp-6); transition: color var(--dur-fast); }
         .btn-back:hover { color: #a5b4fc; }
 
         /* Section Card */
-        .section-card { background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem; margin-bottom: 1.5rem; overflow: hidden; }
-        .section-card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
-        .section-card-header h2 { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; color: #e2e8f0; }
-        .section-card-header h2 svg { width: 18px; height: 18px; color: #818cf8; }
-        .count-badge { background: rgba(99,102,241,0.15); color: #818cf8; font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 1rem; font-weight: 600; }
-        .list-item { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s; }
-        .list-item:hover { background: rgba(255,255,255,0.02); }
+        .section-card { background: rgba(30,41,59,0.5); border: 1px solid var(--c-border); border-radius: var(--r-lg); margin-bottom: var(--sp-6); overflow: hidden; }
+        .section-card-header { padding: var(--sp-5) var(--sp-6); border-bottom: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center; }
+        .section-card-header h2 { font-size: var(--fs-md); font-weight: var(--fw-semibold); display: flex; align-items: center; gap: var(--sp-2); color: var(--c-text-heading); }
+        .section-card-header h2 svg { width: 18px; height: 18px; color: var(--c-primary-light); }
+        .count-badge { background: rgba(99,102,241,0.15); color: var(--c-primary-light); font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: var(--r-pill); font-weight: var(--fw-semibold); }
+        .list-item { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6); border-bottom: 1px solid rgba(255,255,255,0.04); transition: background var(--dur-fast); }
+        .list-item:hover { background: var(--c-surface); }
         .list-item:last-child { border-bottom: none; }
-        .list-item-avatar { width: 40px; height: 40px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+        .list-item-avatar { width: 40px; height: 40px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-weight: var(--fw-bold); font-size: var(--fs-base); flex-shrink: 0; }
         .list-item-info { flex: 1; min-width: 0; }
-        .list-item-name { font-size: 0.875rem; font-weight: 600; color: #e2e8f0; }
-        .list-item-name a { color: #e2e8f0; text-decoration: none; }
-        .list-item-name a:hover { color: #818cf8; }
-        .list-item-meta { font-size: 0.75rem; color: #64748b; margin-top: 0.1rem; }
-        .badge { padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.7rem; font-weight: 600; }
-        .empty-section { text-align: center; padding: 2rem; color: #475569; font-size: 0.85rem; }
-        .empty-section svg { width: 40px; height: 40px; display: block; margin: 0 auto 0.5rem; color: #334155; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .club-header, .section-card { animation: fadeInUp 0.6s ease forwards; }
-        
+        .list-item-name { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--c-text-heading); }
+        .list-item-name a { color: var(--c-text-heading); text-decoration: none; transition: color var(--dur-fast); }
+        .list-item-name a:hover { color: var(--c-primary-light); }
+        .list-item-meta { font-size: var(--fs-xs); color: var(--c-text-subtle); margin-top: 0.1rem; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: var(--r-pill); font-size: 0.7rem; font-weight: var(--fw-semibold); }
+        .empty-section { text-align: center; padding: var(--sp-8); color: #475569; font-size: var(--fs-sm); }
+        .empty-section svg { width: 40px; height: 40px; display: block; margin: 0 auto var(--sp-2); color: #334155; }
+
         /* Simple Pagination UI */
-        .simple-pagination { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.04); background: rgba(15,23,42,0.2); }
-        .page-btn { padding: 0.5rem 1rem; border-radius: 0.5rem; background: rgba(255,255,255,0.05); color: #94a3b8; text-decoration: none; font-size: 0.8rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
-        .page-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; border-color: rgba(255,255,255,0.15); }
+        .simple-pagination { display: flex; justify-content: space-between; align-items: center; padding: var(--sp-4) var(--sp-6); border-top: 1px solid rgba(255,255,255,0.04); background: rgba(15,23,42,0.2); }
+        .page-btn { padding: var(--sp-2) var(--sp-4); border-radius: var(--r-sm); background: var(--c-surface); color: var(--c-text-muted); text-decoration: none; font-size: 0.8rem; font-weight: var(--fw-semibold); border: 1px solid var(--c-border); transition: all var(--dur-fast); display: flex; align-items: center; gap: var(--sp-2); }
+        .page-btn:hover { background: var(--c-surface-hover); color: var(--c-text); border-color: var(--c-border-strong); }
         .page-btn.disabled { opacity: 0.3; pointer-events: none; cursor: not-allowed; }
-        
-        @media (max-width: 768px) { .nav-links { display: none; } .club-top { flex-direction: column; text-align: center; } .yonetim-grid { grid-template-columns: 1fr !important; } }
+
+        @media (max-width: 768px) { .club-top { flex-direction: column; text-align: center; } .yonetim-grid { grid-template-columns: 1fr !important; } }
     </style>
 </head>
 <body>
-    <nav class="navbar">
+    <a href="#main" class="skip-link">İçeriğe geç</a>
+    <nav class="navbar" aria-label="Ana navigasyon">
         <a href="index.php" class="nav-brand"><span class="brand-dot"></span> KulüpNet</a>
+        <button class="mobile-menu-btn" aria-label="Menüyü aç" aria-expanded="false">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
         <div class="nav-links">
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php" class="active">Kulüpler</a>
@@ -201,9 +195,16 @@ $yonetim_kadrosu = $yonetim_stmt->fetchAll();
             <?php endif; ?>
         </div>
     </nav>
-    <div class="container">
+    <div class="drawer-overlay" aria-hidden="true"></div>
+    <aside class="drawer" role="dialog" aria-label="Menü">
+        <div class="drawer-header"><span style="font-weight:700;font-size:1.1rem;">Menü</span><button class="drawer-close" aria-label="Kapat"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+        <div class="drawer-links"><a href="index.php">Ana Sayfa</a><a href="kulupler.php" class="active">Kulüpler</a><a href="etkinlikler.php">Etkinlikler</a><?php if ($giris_yapildi): ?><a href="toplantilar.php">Toplantılar</a><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?></div>
+        <div class="drawer-auth"><?php if ($giris_yapildi): ?><a href="profil.php" class="btn-ghost">Profil</a><a href="cikis.php" class="btn-ghost">Çıkış</a><?php else: ?><a href="giris.php" class="btn-ghost">Giriş</a><a href="kayit.php" class="btn btn-primary btn-sm">Kayıt Ol</a><?php endif; ?></div>
+    </aside>
+
+    <div class="container" id="main">
         <a href="kulupler.php" class="btn-back">← Kulüplere Dön</a>
-        <div class="club-header">
+        <div class="club-header" data-animate>
             <div class="club-top">
                 <div class="club-avatar-lg"><?php echo mb_strtoupper(mb_substr($kulup['ad'], 0, 1)); ?></div>
                 <div class="club-info">
@@ -218,6 +219,7 @@ $yonetim_kadrosu = $yonetim_stmt->fetchAll();
             <?php if ($giris_yapildi): ?>
                 <div class="club-actions">
                     <form method="POST">
+                        <?php echo csrf_field(); ?>
                         <?php if ($uye_mi): ?>
                             <button type="submit" name="kulup_islem" value="ayril" class="btn-action leave">Kulüpten Ayrıl</button>
                         <?php else: ?>
@@ -228,7 +230,7 @@ $yonetim_kadrosu = $yonetim_stmt->fetchAll();
             <?php endif; ?>
         </div>
 
-        <div class="section-card" style="margin-bottom: 1.5rem;">
+        <div class="section-card" style="margin-bottom: 1.5rem;" data-animate>
             <div class="section-card-header">
                 <h2>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>
@@ -259,7 +261,7 @@ $yonetim_kadrosu = $yonetim_stmt->fetchAll();
         </div>
 
         <!-- Üyeler -->
-        <div class="section-card">
+        <div class="section-card" data-animate>
             <div class="section-card-header">
                 <h2>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
@@ -292,7 +294,7 @@ $yonetim_kadrosu = $yonetim_stmt->fetchAll();
         </div>
 
         <!-- Etkinlikler -->
-        <div class="section-card">
+        <div class="section-card" data-animate>
             <div class="section-card-header">
                 <h2>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
@@ -331,6 +333,9 @@ $yonetim_kadrosu = $yonetim_stmt->fetchAll();
             <?php endif; ?>
         </div>
     </div>
+<script src="content/js/nav.js"></script>
+<script src="content/js/animations.js"></script>
+<script src="content/js/toast.js"></script>
 <script src="content/js/theme.js"></script>
 </body>
 </html>

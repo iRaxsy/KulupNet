@@ -1,12 +1,13 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/csrf.php';
 require_once '../config/veritabani.php';
 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $kullanici_adi = $_POST['kullanici_adi'];
-    $sifre = $_POST['sifre'];
+    csrf_zorunlu();
+    $kullanici_adi = $_POST['kullanici_adi'] ?? '';
+    $sifre = $_POST['sifre'] ?? '';
 
     if (!empty($kullanici_adi) && !empty($sifre)) {
         $stmt = $db->prepare("SELECT * FROM adminler WHERE kullanici_adi = ?");
@@ -14,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $admin = $stmt->fetch();
 
         if ($admin && password_verify($sifre, $admin['sifre'])) {
+            // Session fixation'ı önlemek için giriş sonrası ID yenile
+            session_regenerate_id(true);
             $_SESSION['admin_id'] = $admin['id'];
             $_SESSION['admin_adi'] = $admin['kullanici_adi'];
             header("Location: index.php");
@@ -443,6 +446,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Form -->
             <form action="" method="POST" autocomplete="off">
+                <?php echo csrf_field(); ?>
                 <div class="form-group">
                     <label for="kullanici_adi">Kullanıcı Adı</label>
                     <div class="input-wrapper">

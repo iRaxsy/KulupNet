@@ -25,6 +25,7 @@ if (!$duyuru) {
 
 // Form gönderildi mi?
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_zorunlu();
     $yeni_icerik = trim($_POST['duyuru'] ?? '');
 
     if (empty($yeni_icerik)) {

@@ -15,10 +15,11 @@ $id = (int)$_GET['id'];
 
 // Rol güncelleme işlemi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rol_guncelle'])) {
+    csrf_zorunlu();
     $uye_id = (int)$_POST['uyelik_id'];
     $yeni_rol = $_POST['yeni_rol'];
     $gecerli_roller = ['Yönetici', 'Başkan', 'Başkan Yardımcısı', 'Üye'];
-    if (in_array($yeni_rol, $gecerli_roller)) {
+    if (in_array($yeni_rol, $gecerli_roller, true)) {
         $db->prepare("UPDATE kulup_uyelikleri SET kulup_rol = ? WHERE id = ? AND kulup_id = ?")->execute([$yeni_rol, $uye_id, $id]);
     }
     header("Location: kulup_detay.php?id=$id&mesaj=rol_guncellendi");

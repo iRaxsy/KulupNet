@@ -2,12 +2,16 @@
 $sayfa_sayisi = ceil($kayit_sayisi / $sayfa_kayit_sayisi);
 $aralik = 2;
 $aranan = $aranan ?? '';
-
-// Ekstra parametreler (sıralama vs.) - sayfa tarafından ayarlanabilir
-$ekstra = '';
+// XSS kapatması: aranan ve ekstra URL/HTML attribute içine gömülmeden önce kaçışlanır.
+$aranan_attr = htmlspecialchars(urlencode($aranan), ENT_QUOTES, 'UTF-8');
+$ekstra_attr_raw = '';
 if (isset($ekstra_params) && !empty($ekstra_params)) {
-    $ekstra = '&' . $ekstra_params;
+    $ekstra_attr_raw = '&' . $ekstra_params;
 }
+// $ekstra_params zaten sayfa tarafında urlencode edilmiş çiftlerden gelir (yon=ASC&... gibi);
+// güvenlik için attribute bağlamında ayrıca htmlspecialchars uygularız.
+$ekstra_attr = htmlspecialchars($ekstra_attr_raw, ENT_QUOTES, 'UTF-8');
+$sayfa_url_attr = htmlspecialchars($sayfa_url, ENT_QUOTES, 'UTF-8');
 
 echo "<div style='display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem;'>";
 
@@ -16,7 +20,7 @@ echo "<ul style='list-style: none; display: flex; gap: 0.25rem; padding: 0; marg
 
 if ($sayfa > 1) {
     $onceki_sayfa = $sayfa - 1;
-    echo "<li><a href='{$sayfa_url}?sayfa={$onceki_sayfa}&aranan={$aranan}{$ekstra}' style='display: inline-block; padding: 0.5rem 0.85rem; border-radius: 0.375rem; background: #334155; color: #94a3b8; text-decoration: none; font-size: 0.875rem;'>&laquo;</a></li>";
+    echo "<li><a href='{$sayfa_url_attr}?sayfa={$onceki_sayfa}&aranan={$aranan_attr}{$ekstra_attr}' style='display: inline-block; padding: 0.5rem 0.85rem; border-radius: 0.375rem; background: #334155; color: #94a3b8; text-decoration: none; font-size: 0.875rem;'>&laquo;</a></li>";
 }
 
 $baslangic_no = max(1, $sayfa - $aralik);
@@ -26,13 +30,13 @@ for ($x = $baslangic_no; $x <= $bitis_no; $x++) {
     if ($x == $sayfa) {
         echo "<li><a href='javascript:void(0);' style='display: inline-block; padding: 0.5rem 0.85rem; border-radius: 0.375rem; background: #6366f1; color: white; text-decoration: none; font-size: 0.875rem; font-weight: 600;'>{$x}</a></li>";
     } else {
-        echo "<li><a href='{$sayfa_url}?sayfa={$x}&aranan={$aranan}{$ekstra}' style='display: inline-block; padding: 0.5rem 0.85rem; border-radius: 0.375rem; background: #334155; color: #94a3b8; text-decoration: none; font-size: 0.875rem;'>{$x}</a></li>";
+        echo "<li><a href='{$sayfa_url_attr}?sayfa={$x}&aranan={$aranan_attr}{$ekstra_attr}' style='display: inline-block; padding: 0.5rem 0.85rem; border-radius: 0.375rem; background: #334155; color: #94a3b8; text-decoration: none; font-size: 0.875rem;'>{$x}</a></li>";
     }
 }
 
 if ($sayfa < $sayfa_sayisi) {
     $sonraki_sayfa = $sayfa + 1;
-    echo "<li><a href='{$sayfa_url}?sayfa={$sonraki_sayfa}&aranan={$aranan}{$ekstra}' style='display: inline-block; padding: 0.5rem 0.85rem; border-radius: 0.375rem; background: #334155; color: #94a3b8; text-decoration: none; font-size: 0.875rem;'>&raquo;</a></li>";
+    echo "<li><a href='{$sayfa_url_attr}?sayfa={$sonraki_sayfa}&aranan={$aranan_attr}{$ekstra_attr}' style='display: inline-block; padding: 0.5rem 0.85rem; border-radius: 0.375rem; background: #334155; color: #94a3b8; text-decoration: none; font-size: 0.875rem;'>&raquo;</a></li>";
 }
 
 echo "</ul>";

@@ -19,10 +19,13 @@ if (!$yonetici) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_zorunlu();
     $kullanici_adi = trim($_POST['kullanici_adi'] ?? '');
     $sifre = trim($_POST['sifre'] ?? '');
 
-    if (!empty($kullanici_adi)) {
+    if (!empty($kullanici_adi) && !preg_match('/^[a-zA-Z0-9_\-\x{00C7}\x{011E}\x{0130}\x{0131}\x{00D6}\x{00DC}\x{00E7}\x{011F}\x{00F6}\x{00FC} ]{3,30}$/u', $kullanici_adi)) {
+        $error = "Kullanıcı adı 3-30 karakter olmalı ve yalnızca harf, rakam, boşluk, alt çizgi veya tire içerebilir.";
+    } elseif (!empty($kullanici_adi)) {
         // Aynı kullanıcı adına sahip başka bir kayıt var mı kontrol et
         $check_stmt = $db->prepare("SELECT COUNT(*) FROM adminler WHERE kullanici_adi = ? AND id != ?");
         $check_stmt->execute([$kullanici_adi, $id]);

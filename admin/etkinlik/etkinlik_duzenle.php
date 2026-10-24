@@ -25,6 +25,7 @@ $kulupler = $db->query("SELECT id, ad FROM kulupler ORDER BY ad ASC")->fetchAll(
 
 // Güncelleme işlemi
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_zorunlu();
     $baslik = trim($_POST['baslik'] ?? '');
     $kulup_id = $_POST['kulup_id'] ?: null;
     $aciklama = trim($_POST['aciklama'] ?? '');

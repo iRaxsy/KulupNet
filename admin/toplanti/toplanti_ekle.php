@@ -9,20 +9,17 @@ $kulupler = $db->query("SELECT id, ad FROM kulupler ORDER BY ad ASC")->fetchAll(
 
 // Form gönderildi
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_zorunlu();
     $kulup_id = (int)$_POST['kulup_id'];
     $konu = trim($_POST['konu'] ?? '');
     $aciklama = trim($_POST['aciklama'] ?? '');
     $tarih = $_POST['tarih'] ?? '';
     $konum = trim($_POST['konum'] ?? '');
-    
-    // Hedef rol - Checkbox'lardan gelen dizi
-    $secilen_roller = $_POST['hedef_roller'] ?? [];
-    if (empty($secilen_roller)) {
-        // Hiçbir şey seçilmediyse veya 'Herkes' seçildiyse:
-        $hedef_rol = 'Herkes';
-    } else {
-        $hedef_rol = implode(',', $secilen_roller);
-    }
+
+    // Hedef rol - Checkbox'lardan gelen dizi WHITELIST ile doğrulanır (stored XSS + TypeError kapatması)
+    $izinli_roller = ['Herkes', 'Yönetici', 'Başkan', 'Başkan Yardımcısı', 'Üye'];
+    $secilen_roller = array_values(array_intersect($izinli_roller, (array)($_POST['hedef_roller'] ?? [])));
+    $hedef_rol = $secilen_roller ? implode(',', $secilen_roller) : 'Herkes';
 
     if ($kulup_id && $konu && $tarih && $konum) {
         $stmt = $db->prepare("INSERT INTO toplantilar (kulup_id, konu, aciklama, tarih, konum, hedef_rol) VALUES (?, ?, ?, ?, ?, ?)");

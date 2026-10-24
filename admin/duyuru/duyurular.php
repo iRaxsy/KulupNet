@@ -4,9 +4,10 @@ $header_title = 'Duyuru Yönetimi';
 $active_page = 'duyurular';
 require_once '../header.php';
 
-// Sil
-if (isset($_GET['sil'])) {
-    $sil_id = (int)$_GET['sil'];
+// Sil (yalnızca POST + geçerli CSRF token)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sil'])) {
+    csrf_zorunlu();
+    $sil_id = (int)$_POST['sil'];
     $db->prepare("DELETE FROM duyurular WHERE id = ?")->execute([$sil_id]);
     header("Location: duyurular.php?mesaj=silindi");
     exit;

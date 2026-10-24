@@ -1,47 +1,42 @@
 <?php
-session_start();
+require_once 'includes/csrf.php';
 require_once 'config/veritabani.php';
+require_once 'kullanici_auth.php';
 
-$giris_yapildi = isset($_SESSION['kullanici_id']);
-
-// Tabloyu otomatik oluştur
-$db->exec("
-    CREATE TABLE IF NOT EXISTS toplantilar (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        kulup_id INT NOT NULL,
-        konu VARCHAR(200) NOT NULL,
-        aciklama TEXT,
-        tarih DATETIME NOT NULL,
-        konum VARCHAR(200) NOT NULL,
-        hedef_rol VARCHAR(100) NOT NULL DEFAULT 'Herkes',
-        olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (kulup_id) REFERENCES kulupler(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB
-");
-
-$db->exec("
-    CREATE TABLE IF NOT EXISTS toplanti_katilimlari (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        kullanici_id INT NOT NULL,
-        toplanti_id INT NOT NULL,
-        katilim_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uq_katilim (kullanici_id, toplanti_id),
-        FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE,
-        FOREIGN KEY (toplanti_id) REFERENCES toplantilar(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB
-");
+$giris_yapildi = kullanici_giris_kontrol();
 
 // Toplantıya katıl / vazgeç
 if ($giris_yapildi && isset($_POST['toplanti_islem'])) {
+    csrf_zorunlu();
     $toplanti_id = (int)$_POST['toplanti_id'];
-    
+
     // Yasaklı kullanıcı kontrolü
     $stmt_user = $db->prepare("SELECT durum FROM kullanicilar WHERE id = ?");
     $stmt_user->execute([$_SESSION['kullanici_id']]);
     $user_status = $stmt_user->fetchColumn();
-    
+
     if ($user_status === 'Yasakli') {
         header("Location: toplantilar.php?hata=yasakli"); exit;
+    }
+
+    // IDOR/BOLA kapatması: toplantı var mı, kullanıcı üye mi, hedef role uyuyor mu — sunucu tarafında doğrula
+    $stmt_t = $db->prepare("SELECT kulup_id, hedef_rol FROM toplantilar WHERE id = ?");
+    $stmt_t->execute([$toplanti_id]);
+    $toplanti = $stmt_t->fetch();
+    if (!$toplanti) {
+        header("Location: toplantilar.php?hata=gecersiz"); exit;
+    }
+
+    $stmt_u = $db->prepare("SELECT kulup_rol FROM kulup_uyelikleri WHERE kullanici_id = ? AND kulup_id = ?");
+    $stmt_u->execute([$_SESSION['kullanici_id'], $toplanti['kulup_id']]);
+    $uye_rolu = $stmt_u->fetchColumn();
+    if ($uye_rolu === false || $uye_rolu === null || $uye_rolu === '') {
+        header("Location: toplantilar.php?hata=uye_degil"); exit;
+    }
+
+    $hedef_roller_arr = array_map('trim', explode(',', (string)$toplanti['hedef_rol']));
+    if ($toplanti['hedef_rol'] !== 'Herkes' && !in_array($uye_rolu, $hedef_roller_arr, true)) {
+        header("Location: toplantilar.php?hata=rol_yetersiz"); exit;
     }
 
     if ($_POST['toplanti_islem'] === 'katil') {
@@ -143,118 +138,51 @@ $rol_renkleri = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Toplantılar - KulüpNet</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/tokens.css">
+    <link rel="stylesheet" href="content/css/ui.css">
     <link rel="stylesheet" href="content/css/theme.css">
     <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
-        
-        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(10,14,26,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between; }
-        .nav-brand { font-size: 1.25rem; font-weight: 800; color: #f1f5f9; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-brand .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-        .nav-links { display: flex; gap: 0.25rem; }
-        .nav-links a { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
-        .nav-links a:hover { color: #f1f5f9; background: rgba(255,255,255,0.05); }
-        .nav-links a.active { color: #818cf8; background: rgba(99,102,241,0.1); }
-        .nav-auth { display: flex; gap: 0.75rem; align-items: center; }
-        .btn-ghost { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; font-size: 0.875rem; border-radius: 0.5rem; transition: all 0.2s; display: inline-flex; align-items: center; }
-        .btn-ghost:hover { color: #f1f5f9; }
-        .btn-primary-nav { background: linear-gradient(135deg, #6366f1, #7c3aed); color: white; border: none; padding: 0.5rem 1.25rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; text-decoration: none; }
-        .user-menu { display: flex; align-items: center; gap: 0.75rem; }
-        .user-avatar { width: 36px; height: 36px; border-radius: 0.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #818cf8; text-decoration: none; }
-        .user-menu-name { font-size: 0.875rem; font-weight: 600; color: #e2e8f0; }
-
-        .container { max-width: 900px; margin: 0 auto; padding: 6rem 2rem 3rem; }
-        
-        .page-header { margin-bottom: 2rem; }
-        .page-header h1 { font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; }
-        .page-header p { color: #64748b; font-size: 0.9rem; }
-
-        .section-title {
-            font-size: 1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 1rem;
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        .section-title svg { width: 20px; height: 20px; color: #818cf8; }
-
-        .meeting-card {
-            background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem;
-            transition: all 0.3s; position: relative; overflow: hidden;
-        }
-        .meeting-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
-            background: linear-gradient(180deg, #6366f1, #8b5cf6);
-        }
-        .meeting-card:hover { border-color: rgba(99,102,241,0.2); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
-
+        .container { max-width: 900px; margin: 0 auto; padding: calc(var(--nav-height) + var(--sp-12)) var(--sp-8) var(--sp-12); }
+        .section-title { font-size: var(--fs-md); font-weight: var(--fw-bold); color: var(--c-text-heading); margin-bottom: var(--sp-4); display: flex; align-items: center; gap: var(--sp-2); }
+        .section-title svg { width: 20px; height: 20px; color: var(--c-primary-light); }
+        .meeting-card { background: rgba(30,41,59,0.5); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-6); margin-bottom: var(--sp-4); transition: all var(--dur-normal) var(--ease-out); position: relative; overflow: hidden; }
+        .meeting-card::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; background: linear-gradient(180deg, var(--c-primary), var(--c-secondary)); }
+        .meeting-card:hover { border-color: rgba(99,102,241,0.2); transform: translateY(-2px); box-shadow: var(--shadow-md); }
         .meeting-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
-        .meeting-konu { font-size: 1.05rem; font-weight: 700; color: #f1f5f9; }
-        .meeting-kulup {
-            font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem;
-            border-radius: 1rem; background: rgba(99,102,241,0.15); color: #818cf8;
-        }
-
-        .meeting-desc { font-size: 0.85rem; color: #94a3b8; line-height: 1.5; margin-bottom: 1rem; }
-
+        .meeting-konu { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--c-text); }
+        .meeting-kulup { font-size: 0.7rem; font-weight: var(--fw-semibold); padding: 0.2rem 0.6rem; border-radius: var(--r-pill); background: rgba(99,102,241,0.15); color: var(--c-primary-light); }
+        .meeting-desc { font-size: var(--fs-sm); color: var(--c-text-muted); line-height: 1.5; margin-bottom: var(--sp-4); }
         .meeting-meta { display: flex; flex-wrap: wrap; gap: 1.25rem; }
-        .meta-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: #64748b; }
-        .meta-item svg { width: 16px; height: 16px; color: #475569; }
-        .meta-item strong { color: #cbd5e1; font-weight: 600; }
-
+        .meta-item { display: flex; align-items: center; gap: 0.4rem; font-size: var(--fs-sm); color: var(--c-text-subtle); }
+        .meta-item svg { width: 16px; height: 16px; color: var(--c-text-subtle); }
+        .meta-item strong { color: var(--c-text-heading); font-weight: var(--fw-semibold); }
         .role-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-        .role-tag {
-            font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem;
-            border-radius: 1rem; display: inline-block;
-        }
-
-        .btn-join {
-            padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 700;
-            border: none; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
-            text-transform: uppercase; letter-spacing: 0.025em;
-        }
-        .btn-join.join { background: linear-gradient(135deg, #6366f1, #7c3aed); color: white; }
-        .btn-join.join:hover { box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); transform: translateY(-1px); }
-        .btn-join.leave { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
-        .btn-join.leave:hover { background: rgba(239, 68, 68, 0.2); }
-
-        .empty-state {
-            text-align: center; padding: 3rem; color: #475569;
-        }
-        .empty-state svg { width: 48px; height: 48px; margin-bottom: 1rem; color: #334155; }
-        .empty-state p { font-size: 0.9rem; }
-
-        .login-prompt {
-            text-align: center; padding: 4rem 2rem;
-            background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1rem;
-        }
-        .login-prompt h2 { margin-bottom: 0.75rem; font-size: 1.25rem; }
-        .login-prompt p { color: #64748b; margin-bottom: 1.5rem; font-size: 0.9rem; }
-        .login-prompt a {
-            display: inline-block; padding: 0.65rem 1.5rem; border-radius: 0.625rem;
-            background: linear-gradient(135deg, #6366f1, #7c3aed); color: white;
-            text-decoration: none; font-weight: 600; font-size: 0.9rem;
-        }
-
-        .gecmis-section { margin-top: 2.5rem; }
-        .gecmis-card {
-            background: rgba(30,41,59,0.3); border: 1px solid rgba(255,255,255,0.04);
-            border-radius: 0.75rem; padding: 1rem 1.25rem; margin-bottom: 0.75rem;
-            opacity: 0.7; transition: opacity 0.2s;
-        }
+        .role-tag { font-size: 0.65rem; font-weight: var(--fw-bold); padding: 0.15rem 0.5rem; border-radius: var(--r-pill); display: inline-block; }
+        .btn-join { padding: var(--sp-2) var(--sp-4); border-radius: var(--r-md); font-size: 0.8rem; font-weight: var(--fw-bold); border: none; cursor: pointer; transition: all var(--dur-fast); font-family: var(--font-family); text-transform: uppercase; letter-spacing: 0.025em; }
+        .btn-join.join { background: linear-gradient(135deg, var(--c-primary), #7c3aed); color: white; }
+        .btn-join.join:hover { box-shadow: var(--shadow-glow); transform: translateY(-1px); }
+        .btn-join.leave { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+        .btn-join.leave:hover { background: rgba(239,68,68,0.2); }
+        .login-prompt { text-align: center; padding: var(--sp-16) var(--sp-8); background: rgba(30,41,59,0.5); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
+        .login-prompt h2 { margin-bottom: 0.75rem; font-size: var(--fs-xl); }
+        .login-prompt p { color: var(--c-text-muted); margin-bottom: var(--sp-6); }
+        .login-prompt a { display: inline-block; padding: 0.65rem 1.5rem; border-radius: var(--r-md); background: linear-gradient(135deg, var(--c-primary), #7c3aed); color: white; text-decoration: none; font-weight: var(--fw-semibold); }
+        .gecmis-section { margin-top: var(--sp-10); }
+        .gecmis-card { background: rgba(30,41,59,0.3); border: 1px solid rgba(255,255,255,0.04); border-radius: var(--r-md); padding: var(--sp-4) var(--sp-5); margin-bottom: 0.75rem; opacity: 0.7; transition: opacity var(--dur-fast); }
         .gecmis-card:hover { opacity: 1; }
         .gecmis-top { display: flex; justify-content: space-between; align-items: center; }
-        .gecmis-konu { font-size: 0.9rem; font-weight: 600; color: #cbd5e1; }
-        .gecmis-meta { font-size: 0.75rem; color: #475569; margin-top: 0.25rem; }
-
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .meeting-card, .gecmis-card { animation: fadeInUp 0.5s ease forwards; }
-        @media (max-width: 768px) { .nav-links { display: none; } .meeting-meta { flex-direction: column; gap: 0.5rem; } }
+        .gecmis-konu { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--c-text-heading); }
+        .gecmis-meta { font-size: var(--fs-xs); color: var(--c-text-subtle); margin-top: var(--sp-1); }
     </style>
 </head>
 <body>
-    <nav class="navbar">
+    <a href="#main" class="skip-link">İçeriğe geç</a>
+    <nav class="navbar" aria-label="Ana navigasyon">
         <a href="index.php" class="nav-brand"><span class="brand-dot"></span> KulüpNet</a>
+        <button class="mobile-menu-btn" aria-label="Menüyü aç" aria-expanded="false">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
         <div class="nav-links">
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
@@ -290,8 +218,14 @@ $rol_renkleri = [
             <?php endif; ?>
         </div>
     </nav>
+    <div class="drawer-overlay" aria-hidden="true"></div>
+    <aside class="drawer" role="dialog" aria-label="Menü">
+        <div class="drawer-header"><span style="font-weight:700;font-size:1.1rem;">Menü</span><button class="drawer-close" aria-label="Kapat"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+        <div class="drawer-links"><a href="index.php">Ana Sayfa</a><a href="kulupler.php">Kulüpler</a><a href="etkinlikler.php">Etkinlikler</a><?php if ($giris_yapildi): ?><a href="toplantilar.php" class="active">Toplantılar</a><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a><?php endif; ?></div>
+        <div class="drawer-auth"><?php if ($giris_yapildi): ?><a href="profil.php" class="btn-ghost">Profil</a><a href="cikis.php" class="btn-ghost">Çıkış</a><?php else: ?><a href="giris.php" class="btn-ghost">Giriş</a><a href="kayit.php" class="btn btn-primary btn-sm">Kayıt Ol</a><?php endif; ?></div>
+    </aside>
 
-    <div class="container">
+    <div class="container" id="main">
         <div class="page-header">
             <h1>📋 Toplantılar</h1>
             <p>Kulüplerinize ait yaklaşan ve geçmiş toplantıları görüntüleyin.</p>
@@ -329,7 +263,7 @@ $rol_renkleri = [
                 <?php foreach ($toplantilar as $t): 
                     $hedef_roller = array_map('trim', explode(',', $t['hedef_rol']));
                 ?>
-                <div class="meeting-card">
+                <div class="meeting-card" data-animate>
                     <div class="meeting-top">
                         <div class="meeting-konu"><?php echo htmlspecialchars($t['konu']); ?></div>
                         <span class="meeting-kulup"><?php echo htmlspecialchars($t['kulup_adi']); ?></span>
@@ -353,7 +287,7 @@ $rol_renkleri = [
                                     <?php foreach ($hedef_roller as $r): 
                                         $renk = $rol_renkleri[$r] ?? '#818cf8';
                                     ?>
-                                        <span class="role-tag" style="background: <?php echo $renk; ?>20; color: <?php echo $renk; ?>;"><?php echo $r; ?></span>
+                                        <span class="role-tag" style="background: <?php echo $renk; ?>20; color: <?php echo $renk; ?>;"><?php echo htmlspecialchars($r, ENT_QUOTES, 'UTF-8'); ?></span>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
@@ -361,9 +295,10 @@ $rol_renkleri = [
                         
                         <div style="flex-shrink: 0; margin-bottom: 0.2rem;">
                             <form method="POST" style="margin:0;">
-                                <input type="hidden" name="toplanti_id" value="<?php echo $t['id']; ?>">
+                                <?php echo csrf_field(); ?>
+                                <input type="hidden" name="toplanti_id" value="<?php echo (int)$t['id']; ?>">
                                 <?php if (in_array($t['id'], $katilinanlar)): ?>
-                                    <button type="submit" name="toplanti_islem" value="ayril" class="btn-join leave">Vazgeç</button>
+                                    <button type="submit" name="toplanti_islem" value="ayril" class="btn-join leave" onclick="return confirm('Bu toplantıdan ayrılmak istediğinize emin misiniz?');">Vazgeç</button>
                                 <?php elseif ($kullanici_durum === 'Yasakli'): ?>
                                     <span style="font-size: 0.75rem; color: #f87171; font-weight: 600;">Katılım Kısıtlandı</span>
                                 <?php else: ?>
@@ -419,5 +354,8 @@ $rol_renkleri = [
         <?php endif; ?>
     </div>
 <script src="content/js/theme.js"></script>
+<script src="content/js/nav.js"></script>
+<script src="content/js/animations.js"></script>
+<script src="content/js/toast.js"></script>
 </body>
 </html>

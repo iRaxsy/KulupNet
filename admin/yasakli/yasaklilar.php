@@ -6,6 +6,7 @@ require_once '../header.php';
 
 // Yasağı Kaldır İşlemi
 if (isset($_POST['yasagi_kaldir'])) {
+    csrf_zorunlu();
     $uye_id = (int)$_POST['uye_id'];
     $stmt = $db->prepare("UPDATE kullanicilar SET durum = 'Aktif' WHERE id = ?");
     $stmt->execute([$uye_id]);

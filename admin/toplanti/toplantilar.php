@@ -4,24 +4,12 @@ $header_title = 'Toplantı Yönetimi';
 $active_page = 'toplantilar';
 require_once '../header.php';
 
-// Tabloyu otomatik oluştur
-$db->exec("
-    CREATE TABLE IF NOT EXISTS toplantilar (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        kulup_id INT NOT NULL,
-        konu VARCHAR(200) NOT NULL,
-        aciklama TEXT,
-        tarih DATETIME NOT NULL,
-        konum VARCHAR(200) NOT NULL,
-        hedef_rol VARCHAR(100) NOT NULL DEFAULT 'Herkes',
-        olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (kulup_id) REFERENCES kulupler(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB
-");
+// Tablo şeması artık yalnızca sql/database.sql migration'ında tanımlı (runtime DDL kaldırıldı).
 
-// Sil
-if (isset($_GET['sil'])) {
-    $sil_id = (int)$_GET['sil'];
+// Sil (yalnızca POST + geçerli CSRF token)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sil'])) {
+    csrf_zorunlu();
+    $sil_id = (int)$_POST['sil'];
     $db->prepare("DELETE FROM toplantilar WHERE id = ?")->execute([$sil_id]);
     header("Location: toplantilar.php?mesaj=silindi");
     exit;
@@ -326,7 +314,7 @@ $rol_renkleri = [
                             $r = trim($r);
                             $rc = $rol_renkleri[$r] ?? $rol_renkleri['Herkes'];
                         ?>
-                            <span class="role-badge" style="background:<?php echo $rc['bg']; ?>;color:<?php echo $rc['color']; ?>;"><?php echo $r; ?></span>
+                            <span class="role-badge" style="background:<?php echo $rc['bg']; ?>;color:<?php echo $rc['color']; ?>;"><?php echo htmlspecialchars($r, ENT_QUOTES, 'UTF-8'); ?></span>
                         <?php endforeach; ?>
                     </td>
                     <td>

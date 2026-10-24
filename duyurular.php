@@ -1,9 +1,9 @@
 <?php
-session_start();
+require_once 'includes/csrf.php';
 require_once 'config/veritabani.php';
 require_once 'kullanici_auth.php';
 
-giris_gerekli();
+giris_gerekli($db);
 
 $kullanici = kullanici_bilgi($db);
 $kullanici_id = $_SESSION['kullanici_id'];
@@ -29,6 +29,7 @@ $site_duyuru_yetkisi = in_array($kullanici_rol, ['Admin', 'Yetkili']);
 $mesaj = '';
 $mesaj_tur = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['duyuru_olustur'])) {
+    csrf_zorunlu();
     $duyuru_metni = trim($_POST['duyuru'] ?? '');
     $duyuru_turu = $_POST['duyuru_turu'] ?? '';
 
@@ -140,174 +141,94 @@ $duyuru_formu_goster = $site_duyuru_yetkisi || !empty($yonetim_kulupler);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Duyurular - KulüpNet</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/tokens.css">
+    <link rel="stylesheet" href="content/css/ui.css">
     <link rel="stylesheet" href="content/css/theme.css">
     <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
-
-        /* Navbar */
-        .navbar {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(10, 14, 26, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between;
-        }
-        .nav-brand { font-size: 1.25rem; font-weight: 800; color: #f1f5f9; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-brand .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-        .nav-links { display: flex; align-items: center; gap: 0.25rem; }
-        .nav-links a {
-            color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem;
-            font-size: 0.875rem; font-weight: 500; transition: all 0.2s;
-        }
-        .nav-links a:hover { color: #f1f5f9; background: rgba(255,255,255,0.05); }
-        .nav-links a.active { color: #818cf8; background: rgba(99,102,241,0.1); }
-        .nav-auth { display: flex; align-items: center; gap: 0.75rem; }
-        .btn-ghost {
-            color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem;
-            font-size: 0.875rem; font-weight: 500; transition: all 0.2s; border: none; background: none; cursor: pointer;
-        }
-        .btn-ghost:hover { color: #f1f5f9; }
-        .user-menu { display: flex; align-items: center; gap: 0.75rem; }
-        .user-avatar {
-            width: 36px; height: 36px; border-radius: 0.5rem;
-            background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3));
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 0.8rem; color: #818cf8; text-decoration: none;
-        }
-        .user-menu-name { font-size: 0.875rem; font-weight: 600; color: #e2e8f0; }
-
-        /* Container */
-        .container { max-width: 900px; margin: 0 auto; padding: 6rem 2rem 3rem; }
+        .container { max-width: 900px; margin: 0 auto; padding: calc(var(--nav-height) + var(--sp-12)) var(--sp-8) var(--sp-12); }
 
         /* Page Header */
-        .page-header {
-            margin-bottom: 2rem;
-        }
+        .page-header { margin-bottom: var(--sp-8); }
         .page-header h1 {
-            font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #818cf8, #6366f1, #06b6d4);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            font-size: var(--fs-3xl); font-weight: var(--fw-extrabold); margin-bottom: var(--sp-2);
         }
-        .page-header p { color: #64748b; font-size: 0.9rem; }
+        .page-header p { color: var(--c-text-subtle); font-size: var(--fs-base); }
 
-        /* Form Card */
-        .form-card {
-            background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem;
-            position: relative; overflow: hidden;
-        }
+        /* Form Card (top gradient bar) */
+        .form-card { position: relative; overflow: hidden; }
         .form-card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4);
+            background: linear-gradient(90deg, var(--c-primary), var(--c-secondary), var(--c-cyan));
         }
-        .form-card h2 {
-            font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: #e2e8f0;
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        .form-card h2 svg { width: 20px; height: 20px; color: #818cf8; }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: #94a3b8; margin-bottom: 0.4rem; }
+        .form-card h2 { display: flex; align-items: center; gap: var(--sp-2); }
+        .form-card h2 svg { width: 20px; height: 20px; color: var(--c-primary-light); }
+
         .form-select, .form-textarea {
-            width: 100%; padding: 0.75rem 1rem; border-radius: 0.625rem;
-            border: 1px solid rgba(255,255,255,0.08); background: rgba(15,23,42,0.6);
-            color: #f1f5f9; font-size: 0.875rem; font-family: 'Inter', sans-serif;
-            outline: none; transition: all 0.3s ease;
+            width: 100%; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md);
+            border: 1px solid var(--c-border); background: rgba(15,23,42,0.6);
+            color: var(--c-text); font-size: var(--fs-base); font-family: var(--font-family);
+            outline: none; transition: all var(--dur-normal) var(--ease-out);
         }
-        .form-select:focus, .form-textarea:focus {
-            border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
-            background: rgba(15,23,42,0.8);
-        }
+        .form-select:focus, .form-textarea:focus { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
         .form-textarea { min-height: 100px; resize: vertical; }
-        .form-select option { background: #1e293b; color: #f1f5f9; }
+        .form-select option { background: var(--c-bg-elevated); color: var(--c-text); }
+
         .submit-btn {
-            padding: 0.7rem 1.5rem; border: none; border-radius: 0.625rem;
-            background: linear-gradient(135deg, #6366f1, #7c3aed); color: white;
-            font-size: 0.875rem; font-weight: 600; font-family: 'Inter', sans-serif;
-            cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: var(--sp-3) var(--sp-6); border: none; border-radius: var(--r-md);
+            background: linear-gradient(135deg, var(--c-primary), #7c3aed); color: white;
+            font-size: var(--fs-base); font-weight: var(--fw-semibold); font-family: var(--font-family);
+            cursor: pointer; transition: all var(--dur-normal) var(--ease-out);
+            display: inline-flex; align-items: center; gap: var(--sp-2);
         }
-        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(99,102,241,0.35); }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow); }
         .submit-btn svg { width: 16px; height: 16px; }
 
-        /* Messages */
-        .msg {
-            padding: 0.75rem 1rem; border-radius: 0.625rem; font-size: 0.85rem; margin-bottom: 1rem;
-            display: flex; align-items: center; gap: 0.5rem;
-        }
+        /* Flash messages */
+        .msg { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); font-size: var(--fs-sm); margin-bottom: var(--sp-4); display: flex; align-items: center; gap: var(--sp-2); }
         .msg svg { width: 18px; height: 18px; flex-shrink: 0; }
         .msg-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #6ee7b7; }
-        .msg-success svg { color: #10b981; }
+        .msg-success svg { color: var(--c-success); }
         .msg-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #fca5a5; }
-        .msg-error svg { color: #ef4444; }
+        .msg-error svg { color: var(--c-error); }
 
         /* Duyuru Cards */
-        .duyuru-list { display: flex; flex-direction: column; gap: 1rem; }
+        .duyuru-list { display: flex; flex-direction: column; gap: var(--sp-4); }
         .duyuru-card {
-            background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1rem; padding: 1.25rem 1.5rem; transition: all 0.3s;
-            animation: fadeInUp 0.5s ease forwards; opacity: 0;
+            background: rgba(30,41,59,0.5); border: 1px solid var(--c-border);
+            border-radius: var(--r-lg); padding: var(--sp-5) var(--sp-6);
+            transition: transform var(--dur-normal) var(--ease-out), border-color var(--dur-normal), box-shadow var(--dur-normal);
         }
-        .duyuru-card:hover { border-color: rgba(99,102,241,0.15); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
-        .duyuru-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
-        .duyuru-badge {
-            padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.7rem; font-weight: 600;
-            display: inline-flex; align-items: center; gap: 0.35rem;
-        }
+        .duyuru-card:hover { border-color: rgba(99,102,241,0.2); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .duyuru-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-3); flex-wrap: wrap; gap: var(--sp-2); }
+        .duyuru-badge { padding: 0.25rem 0.75rem; border-radius: var(--r-pill); font-size: 0.7rem; font-weight: var(--fw-semibold); display: inline-flex; align-items: center; gap: 0.35rem; }
         .duyuru-badge svg { width: 12px; height: 12px; }
-        .badge-site { background: rgba(99,102,241,0.15); color: #818cf8; }
+        .badge-site { background: rgba(99,102,241,0.15); color: var(--c-primary-light); }
         .badge-kulup { background: rgba(16,185,129,0.15); color: #34d399; }
-        .duyuru-tarih { font-size: 0.75rem; color: #475569; display: flex; align-items: center; gap: 0.35rem; }
+        .duyuru-tarih { font-size: var(--fs-xs); color: var(--c-text-subtle); display: flex; align-items: center; gap: 0.35rem; }
         .duyuru-tarih svg { width: 14px; height: 14px; }
-        .duyuru-icerik { font-size: 0.9rem; color: #cbd5e1; line-height: 1.7; }
+        .duyuru-icerik { font-size: var(--fs-base); color: #cbd5e1; line-height: var(--lh-relaxed); }
 
-        /* Empty state */
-        .empty-state {
-            text-align: center; padding: 4rem 2rem; color: #475569;
-            background: rgba(30,41,59,0.3); border: 1px dashed rgba(255,255,255,0.08);
-            border-radius: 1rem;
-        }
-        .empty-state svg { width: 48px; height: 48px; margin-bottom: 1rem; color: #334155; }
-        .empty-state p { font-size: 0.9rem; }
+        /* Empty state (page-specific) */
+        .empty-state { background: rgba(30,41,59,0.3); border: 1px dashed var(--c-border); border-radius: var(--r-lg); padding: var(--sp-16) var(--sp-8); }
 
-        /* Animation */
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .duyuru-card:nth-child(1) { animation-delay: 0.05s; }
-        .duyuru-card:nth-child(2) { animation-delay: 0.1s; }
-        .duyuru-card:nth-child(3) { animation-delay: 0.15s; }
-        .duyuru-card:nth-child(4) { animation-delay: 0.2s; }
-        .duyuru-card:nth-child(5) { animation-delay: 0.25s; }
-
-        .pagination { display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-top: 3rem; }
-        .page-btn { padding: 0.6rem 1.25rem; border-radius: 0.6rem; background: rgba(30,41,59,0.5); color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.06); transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
-        .page-btn:hover:not(.disabled) { background: rgba(99,102,241,0.1); color: #818cf8; border-color: rgba(99,102,241,0.2); }
-        .page-btn.disabled { opacity: 0.3; cursor: not-allowed; }
-        .page-info { font-size: 0.85rem; color: #64748b; font-weight: 500; }
-
-        /* Footer */
-        .site-footer {
-            border-top: 1px solid rgba(255,255,255,0.06); padding: 3rem 2rem;
-            text-align: center; color: #475569; font-size: 0.8rem;
-        }
-        .footer-links { display: flex; justify-content: center; gap: 2rem; margin-bottom: 1rem; }
-        .footer-links a { color: #64748b; text-decoration: none; transition: color 0.2s; }
-        .footer-links a:hover { color: #818cf8; }
-
-        /* Mobile menu */
-        .mobile-menu-btn { display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0.5rem; }
-        .mobile-menu-btn svg { width: 24px; height: 24px; }
+        /* Pagination (page-info text) */
+        .pagination { gap: var(--sp-6); margin-top: var(--sp-12); }
+        .page-info { font-size: var(--fs-sm); color: var(--c-text-subtle); font-weight: var(--fw-medium); }
 
         @media (max-width: 768px) {
-            .nav-links { display: none; }
-            .navbar { padding: 0 1rem; }
-            .mobile-menu-btn { display: block; }
-            .container { padding: 5.5rem 1rem 2rem; }
-            .pagination { flex-direction: column; gap: 1rem; }
+            .container { padding: calc(var(--nav-height) + var(--sp-8)) var(--sp-4) var(--sp-8); }
+            .pagination { flex-direction: column; gap: var(--sp-4); }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar">
+    <a href="#main" class="skip-link">İçeriğe geç</a>
+    <nav class="navbar" aria-label="Ana navigasyon">
         <a href="index.php" class="nav-brand"><span class="brand-dot"></span> KulüpNet</a>
+        <button class="mobile-menu-btn" aria-label="Menüyü aç" aria-expanded="false">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
         <div class="nav-links">
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
@@ -336,8 +257,14 @@ $duyuru_formu_goster = $site_duyuru_yetkisi || !empty($yonetim_kulupler);
             </div>
         </div>
     </nav>
+    <div class="drawer-overlay" aria-hidden="true"></div>
+    <aside class="drawer" role="dialog" aria-label="Menü">
+        <div class="drawer-header"><span style="font-weight:700;font-size:1.1rem;">Menü</span><button class="drawer-close" aria-label="Kapat"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+        <div class="drawer-links"><a href="index.php">Ana Sayfa</a><a href="kulupler.php">Kulüpler</a><a href="etkinlikler.php">Etkinlikler</a><a href="toplantilar.php">Toplantılar</a><a href="duyurular.php" class="active">Duyurular</a><a href="oneri_sikayet.php">Öneri/Şikayet</a></div>
+        <div class="drawer-auth"><a href="profil.php" class="btn-ghost">Profil</a><a href="cikis.php" class="btn-ghost">Çıkış</a></div>
+    </aside>
 
-    <div class="container">
+    <div class="container" id="main">
         <div class="page-header">
             <h1>📢 Duyurular</h1>
             <p>Site ve kulüp duyurularını görüntüleyin</p>
@@ -361,6 +288,7 @@ $duyuru_formu_goster = $site_duyuru_yetkisi || !empty($yonetim_kulupler);
                 Yeni Duyuru Oluştur
             </h2>
             <form method="POST">
+                <?php echo csrf_field(); ?>
                 <div class="form-group">
                     <label for="duyuru_turu">Duyuru Türü</label>
                     <select name="duyuru_turu" id="duyuru_turu" class="form-select" required>
@@ -388,7 +316,7 @@ $duyuru_formu_goster = $site_duyuru_yetkisi || !empty($yonetim_kulupler);
         <?php if (!empty($duyurular)): ?>
         <div class="duyuru-list">
             <?php foreach ($duyurular as $d): ?>
-            <div class="duyuru-card">
+            <div class="duyuru-card" data-animate>
                 <div class="duyuru-card-header">
                     <span class="duyuru-badge <?php echo $d['kulup_id'] ? 'badge-kulup' : 'badge-site'; ?>">
                         <?php if ($d['kulup_id']): ?>
@@ -438,6 +366,9 @@ $duyuru_formu_goster = $site_duyuru_yetkisi || !empty($yonetim_kulupler);
         </div>
         <p>&copy; 2026 KulüpNet. Tüm hakları saklıdır.</p>
     </footer>
+<script src="content/js/nav.js"></script>
+<script src="content/js/animations.js"></script>
+<script src="content/js/toast.js"></script>
 <script src="content/js/theme.js"></script>
 </body>
 </html>

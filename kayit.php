@@ -1,9 +1,10 @@
 <?php
-session_start();
+require_once 'includes/csrf.php';
 require_once 'config/veritabani.php';
+require_once 'kullanici_auth.php';
 
 // Zaten giriş yapmışsa ana sayfaya yönlendir
-if (isset($_SESSION['kullanici_id'])) {
+if (kullanici_giris_kontrol()) {
     header("Location: index.php");
     exit;
 }
@@ -12,6 +13,7 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_zorunlu();
     $ad = trim($_POST['ad'] ?? '');
     $soyad = trim($_POST['soyad'] ?? '');
     $kullanici_adi = trim($_POST['kullanici_adi'] ?? '');
@@ -32,9 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Geçerli bir e-posta adresi girin.";
     } else {
         // Gelişmiş e-posta doğrulama
-        $eposta_parcalari = explode('@', $eposta);
-        $yerel_kisim = $eposta_parcalari[0]; // @ öncesi
-        $domain = $eposta_parcalari[1]; // @ sonrası
+        // NOT: explode('@') yerine strrpos/substr — yerel kısımda birden fazla '@' olabilir (nadir ama RFC 5322 izin verir),
+        // bu yaklaşım her zaman SON '@' karakterini esas alır.
+        $at_index = strrpos($eposta, '@');
+        $yerel_kisim = substr($eposta, 0, $at_index);            // @ öncesi
+        $domain      = substr($eposta, $at_index + 1);            // @ sonrası
         $domain_parcalari = explode('.', $domain);
         $domain_adi = implode('.', array_slice($domain_parcalari, 0, -1)); // TLD hariç domain
         $tld = end($domain_parcalari); // Son uzantı
@@ -96,20 +100,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kayıt Ol - Kulüp & Etkinlik</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/tokens.css">
+    <link rel="stylesheet" href="content/css/ui.css">
     <link rel="stylesheet" href="content/css/theme.css">
     <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #0a0e1a;
-            overflow-y: auto;
-            position: relative;
-        }
+        body { display: flex; align-items: center; justify-content: center; overflow-y: auto; position: relative; }
         .bg-gradient {
             position: fixed; inset: 0; z-index: 0;
             background:
@@ -254,6 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+    <a href="#main" class="skip-link">İçeriğe geç</a>
     <!-- Top Right Controls -->
     <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 50; display: flex; gap: 0.75rem;">
         <?php include 'includes/theme_toggle.php'; ?>
@@ -269,7 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="orb orb-3"></div>
     <div class="grid-overlay"></div>
 
-    <div class="register-wrapper">
+    <div class="register-wrapper" id="main">
         <div class="register-card">
             <div class="brand">
                 <div class="brand-icon">
@@ -299,7 +296,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <form action="" method="POST" autocomplete="off">
+            <form action="" method="POST" autocomplete="off" data-validate>
+                <?php echo csrf_field(); ?>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="ad">Ad</label>
@@ -359,7 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-group">
                         <label for="sifre">Şifre</label>
                         <div class="input-wrapper">
-                            <input type="password" id="sifre" name="sifre" placeholder="En az 6 karakter" required>
+                            <input type="password" id="sifre" name="sifre" placeholder="En az 6 karakter" required minlength="6" data-strength>
                             <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
                             </svg>
@@ -368,7 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-group">
                         <label for="sifre_tekrar">Şifre Tekrar</label>
                         <div class="input-wrapper">
-                            <input type="password" id="sifre_tekrar" name="sifre_tekrar" placeholder="Şifrenizi tekrarlayın" required>
+                            <input type="password" id="sifre_tekrar" name="sifre_tekrar" placeholder="Şifrenizi tekrarlayın" required data-match="sifre">
                             <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
                             </svg>
@@ -391,6 +389,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+<script src="content/js/form-ux.js"></script>
 <script src="content/js/theme.js"></script>
 </body>
 </html>

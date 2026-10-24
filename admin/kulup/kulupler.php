@@ -2,9 +2,10 @@
 require_once '../auth.php';
 require_once '../../config/veritabani.php';
 
-// Silme işlemi
-if (isset($_GET['sil'])) {
-    $id = (int)$_GET['sil'];
+// Silme işlemi (artık yalnızca POST + geçerli CSRF token ile)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sil'])) {
+    csrf_zorunlu();
+    $id = (int)$_POST['sil'];
     $stmt = $db->prepare("DELETE FROM kulupler WHERE id = ?");
     $stmt->execute([$id]);
     header("Location: kulupler.php?mesaj=silindi");

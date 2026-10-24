@@ -26,14 +26,13 @@ KulüpNet, üniversite topluluklarının ve öğrenci kulüplerinin tüm süreç
 
 ## 🛠️ Teknik Alt Yapı
 
-- **Backend:** PHP 7.4+ / 8.x (PDO Güvenliği ile)
+- **Backend:** PHP 8.0+ (PDO prepared statement güvenliği, `str_ends_with` nedeniyle 8.0 altı desteklenmez), `mbstring` eklentisi gerekli
 - **Veritabanı:** MySQL / MariaDB
 - **Frontend:**
-  - **HTML5 & CSS3**: (Modern "Glassmorphism" tasarımı, Custom CSS Variables)
-  - **Bootstrap 5.x**: Grid sistemi ve yardımcı sınıflar için.
-  - **JavaScript**: Tema yönetimi ve interaktif takvim mantığı için.
+  - **HTML5 & CSS3**: Modern "Glassmorphism" tasarımı, kendi tasarım sistemimiz (`content/css/tokens.css` + `content/css/ui.css`) ile.
+  - **JavaScript**: Tema yönetimi, mobil drawer, scroll animasyonları, toast bildirimleri ve form UX'i için (`content/js/`).
 - **Kütüphaneler & Kaynaklar:**
-  - **SweetAlert2 (CDN/Local)**: Admin paneli modal ve başarı/hata bildirimleri için.
+  - **SweetAlert2 (CDN)**: Yalnızca admin panelinde modal ve başarı/hata bildirimleri için (kullanıcı sayfalarında native `confirm()` + custom toast kullanılır).
   - **Google Fonts (Inter)**: Modern tipografi ve geniş ağırlık desteği.
   - **Heroicons**: Arayüz ikonları (Inline SVG olarak entegre edilmiştir).
 
@@ -44,20 +43,18 @@ KulüpNet, üniversite topluluklarının ve öğrenci kulüplerinin tüm süreç
 2. **Dosyaları Taşıma:** Tüm proje dosyalarını sunucunuzun root dizinine (`htdocs` veya `www`) kopyalayın.
 3. **Veritabanı Oluşturma:**
    - PHPMyAdmin paneline girin.
-   - `kulup_yonetimi` adında yeni bir veritabanı oluşturun (utf8mb4_turkish_ci).
+   - `kulupnet` adında yeni bir veritabanı oluşturun (utf8mb4_turkish_ci).
    - `sql/database.sql` dosyasını bu veritabanına içe aktarın (Import).
-4. **Bağlantı Yapılandırması:** `config/veritabani.php` dosyasını açarak veritabanı kullanıcı adı ve şifrenizi kontrol edin.
+4. **Bağlantı Yapılandırması:** `config/veritabani.php` ortam değişkenlerinden (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) kimlik bilgilerini okur. Apache'de `SetEnv`, nginx-fpm'de `clearenv`/`env` veya `.env` yükleyicisi ile ayarlayın. Yerel XAMPP'te varsayılan `root` + boş parola ile de çalışır.
 5. **Çalıştırma:** Tarayıcınızdan `localhost/projenin_klasor_adi` adresine giderek sistemi kullanmaya başlayabilirsiniz.
 
 ## 🔑 Giriş Bilgileri
 
 **Yönetici Paneli Girişi:** `/admin` dizininden erişilebilir.
-- **Kullanıcı Adı:** `admin`
-- **Şifre:** `123456`
 
-**Örnek Kullanıcı:**
-- **Kullanıcı Adı:** `ismet`
-- **Şifre:** `123456`
+`sql/database.sql` kurulumda `admin` kullanıcısını ve **değiştirilmesi gereken** yer tutucu bir parolayı seed eder. Kurulumdan hemen sonra giriş yapıp parolayı gücelleyin ve mümkünse `adminler` tablosundaki seed kaydını silin/yeniden üretin.
+
+> Güvenlik notu: Depoda geçerli üretim parolaları tutulmaz. `sql/` ve `config/` dizinleri `.htaccess` ile web erişimine kapalıdır (Apache 2.4 `Require all denied`). nginx kullanıyorsanız bu dizinler için eşdeğer `location { internal; deny all; }` bloğunu site config'inize ekleyin.
 
 ## 📂 Klasör Yapısı
 

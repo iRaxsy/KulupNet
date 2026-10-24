@@ -1,16 +1,27 @@
 <?php
-session_start();
-require_once '../config/veritabani.php';
+require_once __DIR__ . '/../includes/csrf.php';
+require_once __DIR__ . '/../config/veritabani.php';
+require_once __DIR__ . '/../kullanici_auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (!isset($_SESSION['kullanici_id'])) {
-    echo json_encode(['hata' => 'Giriş yapılmamış']);
+if (!kullanici_giris_kontrol()) {
+    http_response_code(401);
+    echo json_encode(['hata' => 'Giriş yapılmamış veya hesap askıya alınmış']);
     exit;
 }
 
 $kullanici_id = $_SESSION['kullanici_id'];
 $aksiyon = $_GET['aksiyon'] ?? '';
+
+// POST'la yapılan state-changing aksiyonlar CSRF token ister
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($aksiyon, ['oku', 'tumunu_oku'], true)) {
+    if (!csrf_dogrula()) {
+        http_response_code(400);
+        echo json_encode(['hata' => 'Geçersiz CSRF token']);
+        exit;
+    }
+}
 
 // Kullanıcının kayıt tarihini al
 $stmt = $db->prepare("SELECT kayit_tarihi FROM kullanicilar WHERE id = ?");
@@ -20,19 +31,6 @@ if (!$kayit_tarihi) {
     echo json_encode(['hata' => 'Kullanıcı bulunamadı']);
     exit;
 }
-
-// Tabloyu otomatik oluştur
-$db->exec("
-    CREATE TABLE IF NOT EXISTS bildirim_okumalari (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        kullanici_id INT NOT NULL,
-        tur ENUM('duyuru','toplanti','etkinlik') NOT NULL,
-        ilgili_id INT NOT NULL,
-        okunma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uq_bildirim (kullanici_id, tur, ilgili_id),
-        FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB
-");
 
 // Kullanıcının üye olduğu kulüpler
 $stmt_kulup = $db->prepare("SELECT kulup_id FROM kulup_uyelikleri WHERE kullanici_id = ?");

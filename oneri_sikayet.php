@@ -1,12 +1,13 @@
 <?php
-session_start();
+require_once 'includes/csrf.php';
 require_once 'config/veritabani.php';
 require_once 'kullanici_auth.php';
-giris_gerekli();
+giris_gerekli($db);
 
 $mesaj = ''; $hata = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_zorunlu();
     $tur = $_POST['tur'] ?? '';
     $aciklama = trim($_POST['aciklama'] ?? '');
 
@@ -42,102 +43,63 @@ $gecmis = $stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Öneri / Şikayet - KulüpNet</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="content/css/tokens.css">
+    <link rel="stylesheet" href="content/css/ui.css">
     <link rel="stylesheet" href="content/css/theme.css">
     <script>if(localStorage.getItem('kulupnet-theme')==='light')document.documentElement.style.background='#f0f2f5';</script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: #0a0e1a; color: #f1f5f9; min-height: 100vh; }
-        .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(10,14,26,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between; }
-        .nav-brand { font-size: 1.25rem; font-weight: 800; color: #f1f5f9; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
-        .nav-brand .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-        .nav-links { display: flex; gap: 0.25rem; }
-        .nav-links a { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
-        .nav-links a:hover { color: #f1f5f9; background: rgba(255,255,255,0.05); }
-        .nav-links a.active { color: #818cf8; background: rgba(99,102,241,0.1); }
-        .nav-auth { display: flex; gap: 0.75rem; align-items: center; }
-        .btn-ghost { color: #94a3b8; text-decoration: none; padding: 0.5rem 1rem; font-size: 0.875rem; border-radius: 0.5rem; transition: all 0.2s; }
-        .btn-ghost:hover { color: #f1f5f9; }
-        .user-avatar-nav { width: 36px; height: 36px; border-radius: 0.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #818cf8; text-decoration: none; }
-        .container { max-width: 700px; margin: 0 auto; padding: 6rem 2rem 3rem; }
-        .page-header { margin-bottom: 2rem; }
-        .page-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
-        .page-header p { font-size: 0.875rem; color: #64748b; }
+        .container { max-width: 700px; margin: 0 auto; padding: calc(var(--nav-height) + var(--sp-12)) var(--sp-8) var(--sp-12); }
+        .page-header { margin-bottom: var(--sp-8); }
+        .page-header h1 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin-bottom: var(--sp-1); }
+        .page-header p { font-size: var(--fs-base); color: var(--c-text-subtle); }
 
-        .form-card {
-            background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1rem; padding: 2rem; margin-bottom: 1.5rem;
-        }
-        .form-card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .form-card .desc { font-size: 0.8rem; color: #64748b; margin-bottom: 1.5rem; }
-        .form-group { margin-bottom: 1.25rem; }
-        .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: #94a3b8; margin-bottom: 0.4rem; }
+        .form-card { background: rgba(30,41,59,0.5); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-8); margin-bottom: var(--sp-6); }
+        .form-card h2 { font-size: var(--fs-lg); font-weight: var(--fw-bold); margin-bottom: var(--sp-2); }
+        .form-card .desc { font-size: var(--fs-sm); color: var(--c-text-subtle); margin-bottom: var(--sp-6); }
 
-        .radio-group { display: flex; gap: 1rem; margin-bottom: 1.25rem; }
-        .radio-option {
-            flex: 1; position: relative;
-        }
+        .radio-group { display: flex; gap: var(--sp-4); margin-bottom: var(--sp-5); }
+        .radio-option { flex: 1; position: relative; }
         .radio-option input { position: absolute; opacity: 0; width: 0; height: 0; }
-        .radio-option label {
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            padding: 0.75rem 1rem; border-radius: 0.625rem; cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.08); background: rgba(15,23,42,0.6);
-            color: #94a3b8; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
-        }
-        .radio-option input:checked + label {
-            border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.1); color: #818cf8;
-        }
-        .radio-option label:hover { border-color: rgba(255,255,255,0.15); }
+        .radio-option label { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); cursor: pointer; border: 1px solid var(--c-border); background: rgba(15,23,42,0.6); color: var(--c-text-muted); font-size: var(--fs-sm); font-weight: var(--fw-semibold); transition: all var(--dur-fast); }
+        .radio-option input:checked + label { border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.1); color: var(--c-primary-light); }
+        .radio-option label:hover { border-color: var(--c-border-strong); }
 
-        textarea {
-            width: 100%; padding: 0.75rem 1rem; border-radius: 0.625rem;
-            border: 1px solid rgba(255,255,255,0.08); background: rgba(15,23,42,0.6);
-            color: #f1f5f9; font-size: 0.875rem; font-family: 'Inter', sans-serif;
-            outline: none; transition: all 0.3s; min-height: 120px; resize: vertical;
-        }
+        textarea { width: 100%; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); border: 1px solid var(--c-border); background: rgba(15,23,42,0.6); color: var(--c-text); font-size: var(--fs-base); font-family: var(--font-family); outline: none; transition: all var(--dur-normal); min-height: 120px; resize: vertical; }
         textarea::placeholder { color: #475569; }
         textarea:focus { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
-        .submit-btn {
-            padding: 0.75rem 2rem; border: none; border-radius: 0.625rem;
-            background: linear-gradient(135deg, #6366f1, #7c3aed); color: white;
-            font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.3s;
-            font-family: 'Inter', sans-serif; width: 100%;
-        }
-        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(99,102,241,0.35); }
-
-        .alert { padding: 0.75rem 1rem; border-radius: 0.625rem; font-size: 0.8rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
-        .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #6ee7b7; }
-        .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #fca5a5; }
-        .alert svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .submit-btn { padding: var(--sp-3) var(--sp-8); border: none; border-radius: var(--r-md); background: linear-gradient(135deg, var(--c-primary), #7c3aed); color: white; font-size: var(--fs-base); font-weight: var(--fw-semibold); cursor: pointer; transition: all var(--dur-normal); font-family: var(--font-family); width: 100%; }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow); }
 
         /* History */
-        .section-card { background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem; overflow: hidden; }
-        .section-card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
-        .section-card-header h2 { font-size: 1rem; font-weight: 600; color: #e2e8f0; display: flex; align-items: center; gap: 0.5rem; }
-        .section-card-header h2 svg { width: 18px; height: 18px; color: #818cf8; }
-        .count-badge { background: rgba(99,102,241,0.15); color: #818cf8; font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 1rem; font-weight: 600; }
-        .history-item { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .section-card { background: rgba(30,41,59,0.5); border: 1px solid var(--c-border); border-radius: var(--r-lg); overflow: hidden; }
+        .section-card-header { padding: var(--sp-5) var(--sp-6); border-bottom: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center; }
+        .section-card-header h2 { font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--c-text-heading); display: flex; align-items: center; gap: var(--sp-2); }
+        .section-card-header h2 svg { width: 18px; height: 18px; color: var(--c-primary-light); }
+        .count-badge { background: rgba(99,102,241,0.15); color: var(--c-primary-light); font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: var(--r-pill); font-weight: var(--fw-semibold); }
+        .history-item { padding: var(--sp-4) var(--sp-6); border-bottom: 1px solid rgba(255,255,255,0.04); }
         .history-item:last-child { border-bottom: none; }
-        .history-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
-        .history-type { padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
+        .history-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-2); }
+        .history-type { padding: 0.2rem 0.6rem; border-radius: var(--r-pill); font-size: 0.7rem; font-weight: var(--fw-semibold); }
         .type-oneri { background: rgba(16,185,129,0.15); color: #34d399; }
         .type-sikayet { background: rgba(239,68,68,0.15); color: #f87171; }
-        .history-date { font-size: 0.7rem; color: #64748b; }
-        .history-text { font-size: 0.85rem; color: #94a3b8; line-height: 1.5; }
-        .empty-section { text-align: center; padding: 2rem; color: #475569; font-size: 0.85rem; }
-        .pagination { display: flex; justify-content: center; gap: 0.5rem; padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); }
-        .page-link { padding: 0.4rem 0.8rem; border-radius: 0.5rem; background: rgba(15,23,42,0.6); color: #94a3b8; text-decoration: none; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s; }
-        .page-link:hover { background: rgba(255,255,255,0.05); color: #f1f5f9; }
-        .page-link.active { background: rgba(99,102,241,0.15); color: #818cf8; border-color: rgba(99,102,241,0.3); }
+        .history-date { font-size: 0.7rem; color: var(--c-text-subtle); }
+        .history-text { font-size: var(--fs-sm); color: var(--c-text-muted); line-height: 1.5; }
+        .empty-section { text-align: center; padding: var(--sp-8); color: #475569; font-size: var(--fs-sm); }
 
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .form-card, .section-card { animation: fadeInUp 0.6s ease forwards; }
-        @media (max-width: 768px) { .nav-links { display: none; } }
+        .pagination { display: flex; justify-content: center; gap: var(--sp-2); padding: var(--sp-5); border-top: 1px solid var(--c-border); }
+        .page-link { padding: 0.4rem 0.8rem; border-radius: var(--r-sm); background: rgba(15,23,42,0.6); color: var(--c-text-muted); text-decoration: none; font-size: 0.8rem; border: 1px solid var(--c-border); transition: all var(--dur-fast); }
+        .page-link:hover { background: var(--c-surface-hover); color: var(--c-text); }
+        .page-link.active { background: rgba(99,102,241,0.15); color: var(--c-primary-light); border-color: rgba(99,102,241,0.3); }
     </style>
 </head>
 <body>
-    <nav class="navbar">
+    <a href="#main" class="skip-link">İçeriğe geç</a>
+    <nav class="navbar" aria-label="Ana navigasyon">
         <a href="index.php" class="nav-brand"><span class="brand-dot"></span> KulüpNet</a>
+        <button class="mobile-menu-btn" aria-label="Menüyü aç" aria-expanded="false">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
         <div class="nav-links">
             <a href="index.php">Ana Sayfa</a>
             <a href="kulupler.php">Kulüpler</a>
@@ -166,7 +128,14 @@ $gecmis = $stmt->fetchAll();
                 </div>
         </div>
     </nav>
-    <div class="container">
+    <div class="drawer-overlay" aria-hidden="true"></div>
+    <aside class="drawer" role="dialog" aria-label="Menü">
+        <div class="drawer-header"><span style="font-weight:700;font-size:1.1rem;">Menü</span><button class="drawer-close" aria-label="Kapat"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+        <div class="drawer-links"><a href="index.php">Ana Sayfa</a><a href="kulupler.php">Kulüpler</a><a href="etkinlikler.php">Etkinlikler</a><a href="toplantilar.php">Toplantılar</a><a href="duyurular.php">Duyurular</a><a href="oneri_sikayet.php" class="active">Öneri/Şikayet</a></div>
+        <div class="drawer-auth"><a href="profil.php" class="btn-ghost">Profil</a><a href="cikis.php" class="btn-ghost">Çıkış</a></div>
+    </aside>
+
+    <div class="container" id="main">
         <div class="page-header">
             <h1>💬 Öneri / Şikayet</h1>
             <p>Görüşlerinizi bizimle paylaşın, platformu birlikte geliştirelim</p>
@@ -185,10 +154,11 @@ $gecmis = $stmt->fetchAll();
             </div>
         <?php endif; ?>
 
-        <div class="form-card">
+        <div class="form-card" data-animate>
             <h2>Yeni Geri Bildirim</h2>
             <p class="desc">Öneri veya şikayetinizi aşağıdaki form ile iletebilirsiniz.</p>
             <form method="POST">
+                <?php echo csrf_field(); ?>
                 <label style="font-size:0.8rem;font-weight:500;color:#94a3b8;margin-bottom:0.5rem;display:block;">Tür Seçin</label>
                 <div class="radio-group">
                     <div class="radio-option">
@@ -209,7 +179,7 @@ $gecmis = $stmt->fetchAll();
         </div>
 
         <?php if (!empty($gecmis)): ?>
-        <div class="section-card">
+        <div class="section-card" data-animate>
             <div class="section-card-header">
                 <h2>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -257,6 +227,9 @@ $gecmis = $stmt->fetchAll();
         </div>
         <?php endif; ?>
     </div>
+<script src="content/js/nav.js"></script>
+<script src="content/js/animations.js"></script>
+<script src="content/js/toast.js"></script>
 <script src="content/js/theme.js"></script>
 </body>
 </html>

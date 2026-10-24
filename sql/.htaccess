@@ -1,0 +1,2 @@
+# sql/ dizini web üzerinden erişilemez — database.sql dump'ı ifşasını engeller (Apache 2.4+)
+Require all denied

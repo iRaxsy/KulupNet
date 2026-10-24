@@ -4,7 +4,7 @@ $header_title = 'Üye Detay';
 $active_page = 'uyeler';
 require_once '../header.php';
 
-$uye_id = (int)($_GET['id'] ?? 0);
+$uye_id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 if (!$uye_id) { header("Location: uyeler.php"); exit; }
 
 // Üye bilgisi
@@ -15,10 +15,11 @@ if (!$uye) { header("Location: uyeler.php"); exit; }
 
 // Kulüp rol güncelle
 if (isset($_POST['kulup_rol_guncelle'])) {
+    csrf_zorunlu();
     $uyelik_id = (int)$_POST['uyelik_id'];
     $yeni_rol = $_POST['kulup_rol'];
     $gecerli = ['Yönetici', 'Başkan', 'Başkan Yardımcısı', 'Üye'];
-    if (in_array($yeni_rol, $gecerli)) {
+    if (in_array($yeni_rol, $gecerli, true)) {
         $db->prepare("UPDATE kulup_uyelikleri SET kulup_rol = ? WHERE id = ? AND kullanici_id = ?")
            ->execute([$yeni_rol, $uyelik_id, $uye_id]);
         header("Location: uye_detay.php?id=" . $uye_id . "&mesaj=guncellendi");
@@ -26,9 +27,10 @@ if (isset($_POST['kulup_rol_guncelle'])) {
     }
 }
 
-// Kulüp üyelik sil
-if (isset($_GET['sil_uyelik'])) {
-    $uyelik_id = (int)$_GET['sil_uyelik'];
+// Kulüp üyelik sil (artık yalnızca POST + geçerli CSRF token ile)
+if (isset($_POST['sil_uyelik'])) {
+    csrf_zorunlu();
+    $uyelik_id = (int)$_POST['sil_uyelik'];
     $db->prepare("DELETE FROM kulup_uyelikleri WHERE id = ? AND kullanici_id = ?")
        ->execute([$uyelik_id, $uye_id]);
     header("Location: uye_detay.php?id=" . $uye_id . "&mesaj=silindi");

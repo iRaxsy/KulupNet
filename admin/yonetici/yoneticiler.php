@@ -2,10 +2,11 @@
 require_once '../auth.php';
 require_once '../../config/veritabani.php';
 
-// Silme işlemi
-if (isset($_GET['sil'])) {
-    $id = (int)$_GET['sil'];
-    if ($id !== $_SESSION['admin_id']) { // Kendi kendini silmeyi engelle
+// Silme işlemi (artık yalnızca POST + geçerli CSRF token ile)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sil'])) {
+    csrf_zorunlu();
+    $id = (int)$_POST['sil'];
+    if ($id !== (int)$_SESSION['admin_id']) { // Kendi kendini silmeyi engelle (tip tutarlı karşılaştırma)
         $stmt = $db->prepare("DELETE FROM adminler WHERE id = ?");
         $stmt->execute([$id]);
         header("Location: yoneticiler.php?mesaj=silindi");

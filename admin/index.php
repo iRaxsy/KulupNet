@@ -1,6 +1,19 @@
 <?php
 $page_title = 'Dashboard - Kulüp Yönetimi';
-$header_title = 'Hoş geldin, ' . (isset($_SESSION['admin_adi']) ? $_SESSION['admin_adi'] : 'Admin');
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../config/veritabani.php';
+// Admin adı bayatlamış session değeri yerine DB'den çekilir (isim değiştirilirse hemen yansısın)
+$admin_display_name = 'Admin';
+if (!empty($_SESSION['admin_id'])) {
+    $st = $db->prepare("SELECT kullanici_adi FROM adminler WHERE id = ?");
+    $st->execute([$_SESSION['admin_id']]);
+    $row = $st->fetch();
+    if ($row) {
+        $admin_display_name = $row['kullanici_adi'];
+        $_SESSION['admin_adi'] = $row['kullanici_adi']; // session'ı da tazele
+    }
+}
+$header_title = 'Hoş geldin, ' . $admin_display_name;
 $active_page = 'dashboard';
 require_once 'header.php';
 
@@ -386,64 +399,64 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
 
 <!-- Stat Cards -->
 <div class="dashboard-stats">
-    <div class="dash-card purple">
+    <div class="dash-card purple" data-animate>
         <div class="card-icon">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
             </svg>
         </div>
         <div class="card-label">Toplam Kulüp</div>
-        <div class="card-value"><?php echo $kulup_sayisi; ?></div>
+        <div class="card-value" data-count="<?php echo (int)$kulup_sayisi; ?>"><?php echo $kulup_sayisi; ?></div>
     </div>
 
-    <div class="dash-card blue">
+    <div class="dash-card blue" data-animate>
         <div class="card-icon">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
             </svg>
         </div>
         <div class="card-label">Toplam Etkinlik</div>
-        <div class="card-value"><?php echo $etkinlik_sayisi; ?></div>
+        <div class="card-value" data-count="<?php echo (int)$etkinlik_sayisi; ?>"><?php echo $etkinlik_sayisi; ?></div>
     </div>
 
-    <div class="dash-card green">
+    <div class="dash-card green" data-animate>
         <div class="card-icon">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
         </div>
         <div class="card-label">Aktif Etkinlik</div>
-        <div class="card-value"><?php echo $aktif_etkinlik; ?></div>
+        <div class="card-value" data-count="<?php echo (int)$aktif_etkinlik; ?>"><?php echo $aktif_etkinlik; ?></div>
     </div>
 
-    <div class="dash-card orange">
+    <div class="dash-card orange" data-animate>
         <div class="card-icon">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
         </div>
         <div class="card-label">Biten Etkinlik</div>
-        <div class="card-value"><?php echo $biten_etkinlik; ?></div>
+        <div class="card-value" data-count="<?php echo (int)$biten_etkinlik; ?>"><?php echo $biten_etkinlik; ?></div>
     </div>
 
-    <div class="dash-card cyan">
+    <div class="dash-card cyan" data-animate>
         <div class="card-icon">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
             </svg>
         </div>
         <div class="card-label">Toplam Üye</div>
-        <div class="card-value"><?php echo $toplam_uye; ?></div>
+        <div class="card-value" data-count="<?php echo (int)$toplam_uye; ?>"><?php echo $toplam_uye; ?></div>
     </div>
 
-    <div class="dash-card pink">
+    <div class="dash-card pink" data-animate>
         <div class="card-icon">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3h9m-9 3h3m-6.75 4.125a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-10.5a3 3 0 0 0-3-3h-10.5a3 3 0 0 0-3 3v10.5Z" />
             </svg>
         </div>
         <div class="card-label">Geri Bildirim</div>
-        <div class="card-value"><?php echo $toplam_geribildirim; ?></div>
+        <div class="card-value" data-count="<?php echo (int)$toplam_geribildirim; ?>"><?php echo $toplam_geribildirim; ?></div>
     </div>
 </div>
 
@@ -599,5 +612,18 @@ $son_kulupler = $db->query("SELECT * FROM kulupler ORDER BY id DESC LIMIT 5")->f
         Kulüpleri Yönet
     </a>
 </div>
+
+<script src="../content/js/animations.js"></script>
+<style>
+[data-animate] { opacity: 0; transform: translateY(16px); transition: opacity 400ms cubic-bezier(0.4,0,0.2,1), transform 400ms cubic-bezier(0.4,0,0.2,1); }
+[data-animate].animate-in { opacity: 1; transform: translateY(0); }
+.dash-card:nth-child(2)[data-animate] { transition-delay: 60ms; }
+.dash-card:nth-child(3)[data-animate] { transition-delay: 120ms; }
+.dash-card:nth-child(4)[data-animate] { transition-delay: 180ms; }
+.dash-card:nth-child(5)[data-animate] { transition-delay: 240ms; }
+.dash-card:nth-child(6)[data-animate] { transition-delay: 300ms; }
+.dash-card:nth-child(7)[data-animate] { transition-delay: 360ms; }
+@media (prefers-reduced-motion: reduce) { [data-animate] { opacity: 1; transform: none; transition: none; } }
+</style>
 
 <?php require_once 'footer.php'; ?>

@@ -19,10 +19,11 @@ if ($kulup_id > 0) {
 
 // Rol güncelle
 if (isset($_POST['rol_guncelle'])) {
+    csrf_zorunlu();
     $uye_id = (int)$_POST['uye_id'];
     $yeni_rol = $_POST['yeni_rol'];
     $gecerli_roller = ['Admin', 'Yetkili', 'Organizatör', 'Üye'];
-    if (in_array($yeni_rol, $gecerli_roller)) {
+    if (in_array($yeni_rol, $gecerli_roller, true)) {
         $stmt = $db->prepare("UPDATE kullanicilar SET rol = ? WHERE id = ?");
         $stmt->execute([$yeni_rol, $uye_id]);
         header("Location: uyeler.php?mesaj=guncellendi" . ($kulup_id ? "&kulup_id=$kulup_id" : "") . ($aranan ? "&aranan=" . urlencode($aranan) : ""));
